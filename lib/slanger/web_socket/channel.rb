@@ -7,14 +7,12 @@
 
 require 'glamazon'
 require 'eventmachine'
-require 'forwardable'
 
 module Slanger::WebSocket
   class Channel
     include Glamazon::Base
-    extend  Forwardable
 
-    def_delegators :channel, :push
+    delegate :push, to: :channel
 
     class << self
       def from channel_id

@@ -7,13 +7,10 @@
 
 require 'glamazon'
 require 'eventmachine'
-require 'forwardable'
 require 'fiber'
 
 module Slanger::WebSocket
   class PresenceChannel < Channel
-    def_delegators :channel, :push
-
     # Send an event received from Redis to the EventMachine channel
     def dispatch(message, channel)
       if channel =~ /^slanger:/
