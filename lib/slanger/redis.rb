@@ -1,15 +1,11 @@
 # Redis class.
 # Interface with Redis.
 
-require 'forwardable'
-
 module Slanger
   module Redis
-    extend Forwardable
-
-    def_delegator  :publisher, :publish
-    def_delegators :subscriber, :on, :subscribe
-    def_delegators :regular_connection, :hgetall, :hdel, :hset, :hincrby
+    delegate :publish,                         to: :publisher
+    delegate :on, :subscribe,                  to: :subscriber
+    delegate :hgetall, :hdel, :hset, :hincrby, to: :regular_connection
 
     private
 

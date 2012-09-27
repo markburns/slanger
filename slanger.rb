@@ -5,6 +5,7 @@ require 'eventmachine'
 require 'em-hiredis'
 require 'rack'
 require 'active_support/core_ext/string'
+require 'delegate'
 
 module Slanger; end
 
