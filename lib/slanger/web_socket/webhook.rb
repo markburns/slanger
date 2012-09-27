@@ -1,7 +1,7 @@
 require 'fiber'
 require 'em-http-request'
 
-module Slanger
+module Slanger::WebSocket
   module Webhook
     def post payload
       return unless Slanger::Config.webhook_url
@@ -15,7 +15,7 @@ module Slanger
 
       Fiber.new do
         f = Fiber.current
-        
+
         EM::HttpRequest.new(Slanger::Config.webhook_url).
           post(body: payload, head: { "X-Pusher-Key" => Slanger::Config.app_key, "X-Pusher-Secret" => hmac }).
           callback { f.resume }

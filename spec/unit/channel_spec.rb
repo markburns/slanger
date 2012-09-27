@@ -2,7 +2,7 @@ require 'spec_helper'
 require 'slanger'
 
 describe 'Slanger::Webhook' do
-  let(:channel) { Slanger::Channel.create channel_id: 'test' }
+  let(:channel) { Slanger::WebSocket::Channel.create channel_id: 'test' }
 
   before(:all) do
     EM::Hiredis.stubs(:connect).returns stub_everything('redis')
@@ -22,7 +22,7 @@ describe 'Slanger::Webhook' do
     end
 
     it 'activates a webhook when the last subscriber of a channel unsubscribes' do
-      Slanger::Webhook.expects(:post).
+      Slanger::WebSocket::Webhook.expects(:post).
         with(name: 'channel_vacated', channel: channel.channel_id).
         once
 
@@ -45,7 +45,7 @@ describe 'Slanger::Webhook' do
     end
 
     it 'activates a webhook when the first subscriber of a channel joins' do
-      Slanger::Webhook.expects(:post).
+      Slanger::WebSocket::Webhook.expects(:post).
         with(name: 'channel_occupied', channel: channel.channel_id).
         once
 

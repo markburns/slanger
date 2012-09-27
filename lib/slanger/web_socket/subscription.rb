@@ -1,4 +1,4 @@
-module Slanger
+module Slanger::WebSocket
   class Subscription
     attr_accessor :connection, :socket
     delegate :send_payload, :send_message, :error, :socket_id, to: :connection

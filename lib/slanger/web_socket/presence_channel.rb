@@ -10,7 +10,7 @@ require 'eventmachine'
 require 'forwardable'
 require 'fiber'
 
-module Slanger
+module Slanger::WebSocket
   class PresenceChannel < Channel
     def_delegators :channel, :push
 

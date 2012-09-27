@@ -34,7 +34,7 @@ module Slanger
     # Dispatch messages received from Redis to their destination channel.
     on(:message) do |channel, message|
       message = JSON.parse message
-      c = Channel.from message['channel']
+      c = Slanger::WebSocket::Channel.from message['channel']
       c.dispatch message, channel
     end
   end

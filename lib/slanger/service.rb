@@ -7,7 +7,7 @@ module Slanger
       Slanger::Config[:require].each { |f| require f }
       Thin::Logging.silent = true
       Rack::Handler::Thin.run Slanger::ApiServer, Host: Slanger::Config.api_host, Port: Slanger::Config.api_port
-      Slanger::WebSocketServer.run
+      Slanger::WebSocket::Server.run
     end
 
     def stop

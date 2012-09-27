@@ -1,4 +1,4 @@
-module Slanger
+module Slanger::WebSocket
   class PresenceSubscription < Subscription
     def subscribe
       return handle_invalid_signature if invalid_signature?

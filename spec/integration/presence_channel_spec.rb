@@ -47,7 +47,7 @@ describe 'Integration' do
 
           # Channel id should be in the payload
           messages.last['event'].should == 'pusher:error'
-          messages.last['data']['message'].=~(/^Invalid signature: Expected HMAC SHA256 hex digest of/).should be_true
+          messages.last['data']['message'].should =~ /^Invalid signature: Expected HMAC SHA256 hex digest of/
         end
       end
 

@@ -1,8 +1,8 @@
 require 'eventmachine'
 require 'em-websocket'
 
-module Slanger
-  module WebSocketServer
+module Slanger::WebSocket
+  module Server
     def run
       EM.epoll
       EM.kqueue

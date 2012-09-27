@@ -1,4 +1,4 @@
-module Slanger
+module Slanger::WebSocket
   class Connection
     attr_accessor :socket, :socket_id
 

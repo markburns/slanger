@@ -12,7 +12,9 @@ EM.epoll
 EM.kqueue
 
 File.tap do |f|
-  Dir[f.expand_path(f.join(f.dirname(__FILE__),'lib', 'slanger', '*.rb'))].each do |file|
+  Dir[f.expand_path(f.join(f.dirname(__FILE__),'lib', 'slanger', '**/*.rb'))].each do |file|
     Slanger.autoload File.basename(file, '.rb').camelize, file
   end
+
+  require './lib/slanger/web_socket'
 end

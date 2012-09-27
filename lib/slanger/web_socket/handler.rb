@@ -6,7 +6,7 @@ require 'securerandom'
 require 'signature'
 require 'fiber'
 
-module Slanger
+module Slanger::WebSocket
   class Handler
 
     attr_accessor :connection
@@ -85,10 +85,10 @@ module Slanger
 
     def subscription_klass channel_id
       klass = channel_id.match(/^(private|presence)-/) do |match|
-        Slanger.const_get "#{match[1]}_subscription".classify
+        Slanger::WebSocket.const_get "#{match[1]}_subscription".classify
       end
 
-      klass || Slanger::Subscription
+      klass || Slanger::WebSocket::Subscription
     end
   end
 end

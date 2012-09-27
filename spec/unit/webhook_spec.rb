@@ -1,7 +1,7 @@
 require 'spec_helper'
-require 'lib/slanger/webhook'
+require 'lib/slanger/web_socket/webhook'
 
-describe 'Slanger::Webhook' do
+describe 'Slanger::WebSocket::Webhook' do
 
   around do |example|
     Slanger::Config.load webhook_url: 'https://example.com/pusher',
@@ -28,7 +28,7 @@ describe 'Slanger::Webhook' do
         }).
         to_return(:status => 200, :body => "", :headers => {})
 
-      Slanger::Webhook.post name: 'channel_occupied', channel: 'test channel'
+      Slanger::WebSocket::Webhook.post name: 'channel_occupied', channel: 'test channel'
 
       WebMock.should have_requested(:post, Slanger::Config.webhook_url).
         with(body: payload, headers: {

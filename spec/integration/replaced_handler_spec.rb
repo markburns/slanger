@@ -1,7 +1,7 @@
 require 'spec_helper'
-require 'lib/slanger/handler.rb'
+require 'lib/slanger/web_socket/handler'
 
-class ReplacedHandler < Slanger::Handler
+class ReplacedHandler < Slanger::WebSocket::Handler
   def authenticate
     super
     send_payload nil, 'pusher:info', { message: "Welcome!" }
