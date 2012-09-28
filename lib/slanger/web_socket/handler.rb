@@ -39,7 +39,9 @@ module Slanger::WebSocket
     end
 
     def onclose
-      @subscriptions.each { |channel_id, subscription_id| Channel.unsubscribe channel_id, subscription_id }
+      @subscriptions.each do |channel_id, subscription_id|
+        Channel.unsubscribe channel_id, subscription_id
+      end
     end
 
     def authenticate
