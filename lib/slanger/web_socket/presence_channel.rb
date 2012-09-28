@@ -12,8 +12,8 @@ require 'fiber'
 module Slanger::WebSocket
   class PresenceChannel < Channel
     # Send an event received from Redis to the EventMachine channel
-    def dispatch(message, channel)
-      if channel =~ /^slanger:/
+    def dispatch(message, channel_id)
+      if channel_id =~ /^slanger:/
         # Messages received from the Redis channel slanger:*  carry info on
         # subscriptions. Update our subscribers accordingly.
         update_subscribers message
@@ -24,7 +24,8 @@ module Slanger::WebSocket
 
     def initialize(attrs)
       super
-      # Also subscribe the slanger daemon to a Redis channel used for events concerning subscriptions.
+      # Also subscribe the slanger daemon to a Redis channel used for events
+      # concerning subscriptions.
       Slanger::Redis.subscribe 'slanger:connection_notification'
     end
 
@@ -33,7 +34,8 @@ module Slanger::WebSocket
       public_subscription_id = SecureRandom.uuid
 
       # Send event about the new subscription to the Redis slanger:connection_notification Channel.
-      publisher = publish_connection_notification subscription_id: public_subscription_id, online: true,
+      publisher = publish_connection_notification subscription_id: public_subscription_id,
+        online: true,
         channel_data: channel_data, channel: channel_id
 
       # Associate the subscription data to the public id in Redis.
@@ -46,7 +48,7 @@ module Slanger::WebSocket
           # Call the provided callback.
           callback.call
           # Add the subscription to our table.
-          internal_subscription_table[public_subscription_id] = channel.subscribe &blk
+          internal_subscription_table[public_subscription_id] = em_channel.subscribe(&blk)
         end
       end
 
@@ -63,7 +65,7 @@ module Slanger::WebSocket
 
     def unsubscribe(public_subscription_id)
       # Unsubcribe from EM::Channel
-      channel.unsubscribe(internal_subscription_table.delete(public_subscription_id)) # if internal_subscription_table[public_subscription_id]
+      em_channel.unsubscribe(internal_subscription_table.delete(public_subscription_id)) # if internal_subscription_table[public_subscription_id]
       # Remove subscription data from Redis
       roster_remove public_subscription_id
       # Notify all instances

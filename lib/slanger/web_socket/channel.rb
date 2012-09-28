@@ -12,7 +12,7 @@ module Slanger::WebSocket
   class Channel
     include Glamazon::Base
 
-    delegate :push, to: :channel
+    delegate :push, to: :em_channel
 
     class << self
       def from channel_id
@@ -34,26 +34,21 @@ module Slanger::WebSocket
       Slanger::Redis.subscribe channel_id
     end
 
-    def channel
+    def em_channel
       @channel ||= EM::Channel.new
     end
 
     def subscribe *a, &blk
-      Slanger::Redis.hincrby('channel_subscriber_count', channel_id, 1).
-        callback do |value|
-          Slanger::WebSocket::Webhook.post name: 'channel_occupied', channel: channel_id if value == 1
-        end
+      handle_webhook 1, 'channel_occupied', +1
 
-      channel.subscribe(*a, &blk)
+      em_channel.subscribe(*a, &blk)
     end
 
-    def unsubscribe *a, &blk
-      Slanger::Redis.hincrby('channel_subscriber_count', channel_id, -1).
-        callback do |value|
-          Slanger::WebSocket::Webhook.post name: 'channel_vacated', channel: channel_id if value == 0
-        end
 
-      channel.unsubscribe(*a, &blk)
+    def unsubscribe *a, &blk
+      handle_webhook 0, 'channel_vacated', -1
+
+      em_channel.unsubscribe(*a, &blk)
     end
 
 
@@ -72,6 +67,17 @@ module Slanger::WebSocket
 
     def authenticated?
       channel_id =~ /^private-/ || channel_id =~ /^presence-/
+    end
+
+    private
+
+    def handle_webhook value, name, increment
+      Slanger::Redis.hincrby('channel_subscriber_count', channel_id, increment).
+        callback do |v|
+          if v == value
+            Slanger::WebSocket::Webhook.post name: name, channel: channel_id
+          end
+        end
     end
   end
 end
