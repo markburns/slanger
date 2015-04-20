@@ -27,6 +27,9 @@ module Slanger
           ws.onopen        { |handshake| ws.connection_handler = Slanger::Config.socket_handler.new ws, handshake }
           ws.onmessage     { |msg| ws.connection_handler.onmessage msg }
           ws.onclose       { ws.connection_handler.onclose }
+
+          # Also subscribe the slanger daemon to a Redis channel used for events concerning subscriptions.
+          Slanger::Redis.subscribe 'slanger:connection_notification'
         end
       end
     end

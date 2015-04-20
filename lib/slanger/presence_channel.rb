@@ -27,12 +27,6 @@ module Slanger
       end
     end
 
-    def initialize(attrs)
-      super
-      # Also subscribe the slanger daemon to a Redis channel used for events concerning subscriptions.
-      Slanger::Redis.subscribe 'slanger:connection_notification'
-    end
-
     def subscribe(msg, on_subscribe_callback, &blk)
       channel_data = JSON.parse msg['data']['channel_data']
       public_subscription_id = SecureRandom.uuid
@@ -121,7 +115,6 @@ module Slanger
     end
 
     def publish_connection_notification(payload, retry_count=0)
-
       Slanger.debug "#{__method__}(#{payload}, #{retry_count})"
 
       # Send a subscription notification to the global slanger:connection_notification
