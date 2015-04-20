@@ -1,6 +1,9 @@
 require 'thin'
 require 'rack'
 
+#autoload logger
+Slanger::Logger
+
 module Slanger
   module Service
     def run

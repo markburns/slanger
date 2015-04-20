@@ -12,8 +12,6 @@ require 'fiber'
 
 module Slanger
   class PresenceChannel < Channel
-    def_delegators :channel, :push
-
     # Send an event received from Redis to the EventMachine channel
     def dispatch(message, channel_id)
       Slanger.debug "PresenceChannel dispatch message: channel_id: #{channel_id} msg: #{message}"
