@@ -16,6 +16,8 @@ module Slanger
 
     # Send an event received from Redis to the EventMachine channel
     def dispatch(message, channel)
+      Slanger.debug "PresenceChannel dispatch message: channel_id: #{channel_id} msg: #{message}"
+
       if channel =~ /^slanger:/
         # Messages received from the Redis channel slanger:*  carry info on
         # subscriptions. Update our subscribers accordingly.
@@ -73,7 +75,7 @@ module Slanger
     end
 
     def ids
-      subscriptions.map { |_,v| v['user_id'] }
+      subscribers.map(&:first)
     end
 
     def subscribers
@@ -81,6 +83,7 @@ module Slanger
     end
 
     def unsubscribe(public_subscription_id)
+      Slanger.debug "Leaving presence channel - notify_all_instances"
       # Unsubcribe from EM::Channel
       channel.unsubscribe(public_to_em_channel_table.delete(public_subscription_id))
       # Remove subscription data from Redis
@@ -90,6 +93,12 @@ module Slanger
     end
 
     private
+
+    # This is the state of the presence channel across the system. kept in sync
+    # with redis pubsub
+    def subscriptions
+      @subscriptions ||= get_roster || {}
+    end
 
     def get_roster
       # Read subscription infos from Redis.
@@ -112,17 +121,26 @@ module Slanger
     end
 
     def publish_connection_notification(payload, retry_count=0)
+
+      Slanger.debug "#{__method__}(#{payload}, #{retry_count})"
+
       # Send a subscription notification to the global slanger:connection_notification
       # channel.
-      Slanger::Redis.publish('slanger:connection_notification', payload.to_json).
-        tap { |r| r.errback { publish_connection_notification payload, retry_count.succ unless retry_count == 5 } }
+      Slanger::Redis.
+        publish('slanger:connection_notification', payload.to_json).
+        callback{
+          Slanger.debug "#{__method__} complete (#{payload}, #{retry_count})"
+        }.
+        errback {
+          if retry_count != 5
+            publish_connection_notification payload, retry_count.succ 
+          else
+            Slanger.debug "Retries failed, not publishing slanger:connection_notification(#{payload}, #{retry_count})"
+          end
+        }
     end
 
-    # This is the state of the presence channel across the system. kept in sync
-    # with redis pubsub
-    def subscriptions
-      @subscriptions ||= get_roster || {}
-    end
+
 
     # This is used map public subscription ids to em channel subscription ids.
     # em channel subscription ids are incremented integers, so they cannot
