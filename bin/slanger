@@ -6,10 +6,13 @@ require 'bundler/setup'
 require 'eventmachine'
 
 options = {
-  api_host: '0.0.0.0', api_port: '4567', websocket_host: '0.0.0.0',
-  websocket_port: '8080', debug: false, redis_address: 'redis://0.0.0.0:6379/0'
-  }
-
+  api_host: '0.0.0.0',
+  api_port: '4567',
+  websocket_host: '0.0.0.0',
+  websocket_port: '8080',
+  verbose: false,
+  redis_address: 'redis://0.0.0.0:6379/0'
+}
 
 OptionParser.new do |opts|
   opts.on '-h', '--help', 'Display this screen' do
@@ -57,7 +60,7 @@ OptionParser.new do |opts|
   end
 
   opts.on "-v", "--[no-]verbose", "Run verbosely" do |v|
-    options[:debug] = v
+    options[:verbose] = v
   end
 
   opts.on "-t" "--activity_timeout", "Activity (ping-pong) Timeout" do |t|
@@ -68,6 +71,15 @@ OptionParser.new do |opts|
     options[:pid_file] = k
   end
 
+  opts.on '--log_file LOGFILE', "The log file for slanger output. Defaults to STDOUT" do |l|
+    options[:log_file] = l
+  end
+
+  opts.on '--log_level LEVEL', "The log level for slanger. Defaults to INFO" do |l|
+    options[:log_level] = l
+  end
+
+
   opts.parse!
 
   %w<app_key secret>.each do |parameter|
@@ -77,7 +89,6 @@ OptionParser.new do |opts|
       exit
     end
   end
-
 end
 
 
@@ -96,6 +107,12 @@ EM.kqueue
 
 EM.run do
   File.tap { |f| require f.expand_path(f.join(f.dirname(__FILE__),'..', 'slanger.rb')) }
+  log_file  = options[:log_file]  || STDOUT
+  log_level = options[:log_level] || Logger::INFO
+
+  Slanger.logger = Logger.new log_file
+  Slanger.log_level = log_level
+
   Slanger::Config.load options
 
   # Write PID to file
@@ -105,24 +122,24 @@ EM.run do
 
   Slanger::Service.run
 
-  puts "\n"
-  puts "\n"
-  puts "    .d8888b.  888                                               "
-  puts "   d88P  Y88b 888                                               "
-  puts "   Y88b.      888                                               "
-  puts '    "Y888b.   888  8888b.  88888b.   .d88b.   .d88b.  888d888   '
-  puts '       "Y88b. 888     "88b 888 "88b d88P"88b d8P  Y8b 888P"     '
-  puts '         "888 888 .d888888 888  888 888  888 88888888 888       '
-  puts "   Y88b  d88P 888 888  888 888  888 Y88b 888 Y8b.     888       "
-  puts '    "Y8888P"  888 "Y888888 888  888  "Y88888  "Y8888  888       '
-  puts "                                         888                    "
-  puts "                                    Y8b d88P                    "
-  puts '                                    "Y88P"                      '
-  puts "\n" * 2
+  Slanger.info "\n"
+  Slanger.info "\n"
+  Slanger.info "    .d8888b.  888                                               "
+  Slanger.info "   d88P  Y88b 888                                               "
+  Slanger.info "   Y88b.      888                                               "
+  Slanger.info '    "Y888b.   888  8888b.  88888b.   .d88b.   .d88b.  888d888   '
+  Slanger.info '       "Y88b. 888     "88b 888 "88b d88P"88b d8P  Y8b 888P"     '
+  Slanger.info '         "888 888 .d888888 888  888 888  888 88888888 888       '
+  Slanger.info "   Y88b  d88P 888 888  888 888  888 Y88b 888 Y8b.     888       "
+  Slanger.info '    "Y8888P"  888 "Y888888 888  888  "Y88888  "Y8888  888       '
+  Slanger.info "                                         888                    "
+  Slanger.info "                                    Y8b d88P                    "
+  Slanger.info '                                    "Y88P"                      '
+  Slanger.info "\n" * 2
 
-  puts "Running Slanger v.#{Slanger::VERSION}"
-  puts "\n"
+  Slanger.info "Running Slanger v.#{Slanger::VERSION}"
+  Slanger.info "\n"
 
-  puts "Slanger API server listening on port #{options[:api_port]}"
-  puts "Slanger WebSocket server listening on port #{options[:websocket_port]}"
+  Slanger.info "Slanger API server       listening on port #{options[:api_port]}"
+  Slanger.info "Slanger WebSocket server listening on port #{options[:websocket_port]}"
 end
