@@ -15,10 +15,10 @@ module Slanger
     def_delegators :channel, :push
 
     # Send an event received from Redis to the EventMachine channel
-    def dispatch(message, channel)
+    def dispatch(message, channel_id)
       Slanger.debug "PresenceChannel dispatch message: channel_id: #{channel_id} msg: #{message}"
 
-      if channel =~ /^slanger:/
+      if channel_id =~ /^slanger:/
         # Messages received from the Redis channel slanger:*  carry info on
         # subscriptions. Update our subscribers accordingly.
         update_subscribers message
@@ -32,7 +32,8 @@ module Slanger
       public_subscription_id = SecureRandom.uuid
 
       # Send event about the new subscription to the Redis slanger:connection_notification Channel.
-      publisher = publish_connection_status_change(
+      #
+      publisher = publish_connection_notification(
         subscription_id: public_subscription_id,
         online: true,
         channel_data: channel_data,
@@ -79,7 +80,7 @@ module Slanger
     def unsubscribe(public_subscription_id)
       Slanger.debug "Leaving presence channel - notify_all_instances"
       # Unsubcribe from EM::Channel
-      channel.unsubscribe(public_to_em_channel_table.delete(public_subscription_id))
+      em_channel.unsubscribe(public_to_em_channel_table.delete(public_subscription_id))
       # Remove subscription data from Redis
       roster_remove public_subscription_id
       # Notify all instances

@@ -14,7 +14,7 @@ module Slanger
     include Glamazon::Base
     extend  Forwardable
 
-    def_delegators :channel, :push
+    def_delegators :em_channel, :push
 
     class << self
       def from channel_id
@@ -36,8 +36,8 @@ module Slanger
       Slanger::Redis.subscribe channel_id
     end
 
-    def channel
-      @channel ||= EM::Channel.new
+    def em_channel
+      @em_channel ||= EM::Channel.new
     end
 
     def subscribe *a, &blk
@@ -46,7 +46,7 @@ module Slanger
           Slanger::Webhook.post name: 'channel_occupied', channel: channel_id if value == 1
         end
 
-      channel.subscribe *a, &blk
+      em_channel.subscribe *a, &blk
     end
 
     def unsubscribe *a, &blk
@@ -55,7 +55,7 @@ module Slanger
           Slanger::Webhook.post name: 'channel_vacated', channel: channel_id if value == 0
         end
 
-      channel.unsubscribe *a, &blk
+      em_channel.unsubscribe *a, &blk
     end
 
 
@@ -68,8 +68,8 @@ module Slanger
 
     # Send an event received from Redis to the EventMachine channel
     # which will send it to subscribed clients.
-    def dispatch(message, channel)
-      push(message.to_json) unless channel =~ /^slanger:/
+    def dispatch(message, channel_id)
+      push(message.to_json) unless channel_id =~ /^slanger:/
     end
 
     def authenticated?
