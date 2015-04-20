@@ -53,10 +53,14 @@ module Slanger
 
     def publisher_callback_from(publisher, public_subscription_id, on_subscribe_callback, &blk)
       Proc.new do
+        Slanger.debug "Start publisher callback #{public_subscription_id}"
         # fuuuuuuuuuccccccck!
         publisher.callback do
+          Slanger.debug "Publisher callback complete"
+
           EM.next_tick do
             id = em_channel.subscribe &blk
+            Slanger.debug "Set public_to_em_channel_table #{public_subscription_id} => #{id}"
             # Add the subscription to our table.
             public_to_em_channel_table[public_subscription_id] = id
 
