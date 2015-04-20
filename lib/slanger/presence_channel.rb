@@ -31,7 +31,7 @@ module Slanger
 
       # Send event about the new subscription to the Redis slanger:connection_notification Channel.
       #
-      publisher = publish_connection_notification(
+      publisher = publish_connection_status_change(
         subscription_id: public_subscription_id,
         online: true,
         channel_data: channel_data,
@@ -82,7 +82,7 @@ module Slanger
       # Remove subscription data from Redis
       roster_remove public_subscription_id
       # Notify all instances
-      publish_connection_notification subscription_id: public_subscription_id, online: false, channel: channel_id
+      publish_connection_status_change subscription_id: public_subscription_id, online: false, channel: channel_id
     end
 
     private
@@ -113,7 +113,7 @@ module Slanger
       Slanger::Redis.hdel(channel_id, key)
     end
 
-    def publish_connection_notification(payload, retry_count=0)
+    def publish_connection_status_change(payload, retry_count=0)
       Slanger.debug "#{__method__}(#{payload}, #{retry_count})"
 
       # Send a subscription notification to the global slanger:connection_notification
@@ -125,7 +125,7 @@ module Slanger
         }.
         errback {
           if retry_count != 5
-            publish_connection_notification payload, retry_count.succ 
+            publish_connection_status_change payload, retry_count.succ 
           else
             Slanger.debug "Retries failed, not publishing slanger:connection_notification(#{payload}, #{retry_count})"
           end
