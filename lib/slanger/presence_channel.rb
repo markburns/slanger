@@ -31,29 +31,41 @@ module Slanger
       Slanger::Redis.subscribe 'slanger:connection_notification'
     end
 
-    def subscribe(msg, callback, &blk)
+    def subscribe(msg, on_subscribe_callback, &blk)
       channel_data = JSON.parse msg['data']['channel_data']
       public_subscription_id = SecureRandom.uuid
 
       # Send event about the new subscription to the Redis slanger:connection_notification Channel.
-      publisher = publish_connection_notification subscription_id: public_subscription_id, online: true,
-        channel_data: channel_data, channel: channel_id
+      publisher = publish_connection_status_change(
+        subscription_id: public_subscription_id,
+        online: true,
+        channel_data: channel_data,
+        channel: channel_id
+      )
+
+      publisher_callback = publisher_callback_from(publisher, public_subscription_id, on_subscribe_callback, &blk)
 
       # Associate the subscription data to the public id in Redis.
-      roster_add public_subscription_id, channel_data
-
-      # fuuuuuuuuuccccccck!
-      publisher.callback do
-        EM.next_tick do
-          # The Subscription event has been sent to Redis successfully.
-          # Call the provided callback.
-          callback.call
-          # Add the subscription to our table.
-          internal_subscription_table[public_subscription_id] = channel.subscribe &blk
-        end
-      end
+      roster_add(public_subscription_id, channel_data, publisher_callback)
 
       public_subscription_id
+    end
+
+    def publisher_callback_from(publisher, public_subscription_id, on_subscribe_callback, &blk)
+      Proc.new do
+        # fuuuuuuuuuccccccck!
+        publisher.callback do
+          EM.next_tick do
+            id = em_channel.subscribe &blk
+            # Add the subscription to our table.
+            public_to_em_channel_table[public_subscription_id] = id
+
+
+            # The Subscription event has been sent to Redis successfully
+            on_subscribe_callback.call
+          end
+        end
+      end
     end
 
     def ids
@@ -66,7 +78,7 @@ module Slanger
 
     def unsubscribe(public_subscription_id)
       # Unsubcribe from EM::Channel
-      channel.unsubscribe(internal_subscription_table.delete(public_subscription_id)) # if internal_subscription_table[public_subscription_id]
+      channel.unsubscribe(public_to_em_channel_table.delete(public_subscription_id))
       # Remove subscription data from Redis
       roster_remove public_subscription_id
       # Notify all instances
@@ -85,9 +97,9 @@ module Slanger
       end.resume
     end
 
-    def roster_add(key, value)
+    def roster_add(key, value, on_add_callback)
       # Add subscription info to Redis.
-      Slanger::Redis.hset(channel_id, key, value)
+      Slanger::Redis.hset(channel_id, key, value).callback{on_add_callback.call}
     end
 
     def roster_remove(key)
@@ -111,8 +123,8 @@ module Slanger
     # This is used map public subscription ids to em channel subscription ids.
     # em channel subscription ids are incremented integers, so they cannot
     # be used as keys in distributed system because they will not be unique
-    def internal_subscription_table
-      @internal_subscription_table ||= {}
+    def public_to_em_channel_table
+      @public_to_em_channel_table ||= {}
     end
 
     def update_subscribers(message)
