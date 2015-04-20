@@ -14,6 +14,11 @@ options = {
   redis_address: 'redis://0.0.0.0:6379/0'
 }
 
+if ENV["DEBUGGER"]=="true"
+  puts "debugger enabled"
+  require "byebug"
+end
+
 OptionParser.new do |opts|
   opts.on '-h', '--help', 'Display this screen' do
     puts opts
