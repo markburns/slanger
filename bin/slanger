@@ -120,9 +120,8 @@ EM.run do
 
   Slanger::Config.load options
 
-  # Write PID to file
-  unless options[:pid_file].nil?
-    File.open(options[:pid_file], 'w') { |f| f.puts Process.pid }
+  %w(INT HUP).each do |s|
+    Signal.trap(s) { Slanger::Service.stop }
   end
 
   Slanger::Service.run
