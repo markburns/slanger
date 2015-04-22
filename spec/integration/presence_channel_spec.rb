@@ -128,10 +128,17 @@ describe 'Integration' do
               when 2
                 10.times do
                   new_websocket.tap do |u|
+                      Slanger.error "new websocket #{u}"
                     u.stream do |message|
+                      Slanger.error "new stream message #{message}"
                       # remove stream callback
                       ## close the connection in the next tick as soon as subscription is acknowledged
-                      u.stream { EM.next_tick { u.close_connection } }
+                      u.stream {
+
+                        Slanger.error "next stream"
+                        EM.next_tick { 
+                        Slanger.error "close connection #{u}"
+                          u.close_connection } }
 
                       send_subscribe({ user: u,
                          user_id: '37960509766262569d504f02a0ee986d',
@@ -146,10 +153,12 @@ describe 'Integration' do
 
             end
 
-            # There should only be one set of presence messages sent to the refernce user for the second user.
-            messages.one? { |message| message['event'] == 'pusher_internal:member_added'   && message['data']['user_id'] == '37960509766262569d504f02a0ee986d' }.should be_true
-            messages.one? { |message| message['event'] == 'pusher_internal:member_removed' && message['data']['user_id'] == '37960509766262569d504f02a0ee986d' }.should be_true
+            # There should only be one set of presence messages sent to the reference user for the second user.
+            one_added = messages.one? { |message| message['event'] == 'pusher_internal:member_added'   && message['data']['user_id'] == '37960509766262569d504f02a0ee986d' }
+            one_added.should be_true
 
+            one_removed = messages.one? { |message| message['event'] == 'pusher_internal:member_removed' && message['data']['user_id'] == '37960509766262569d504f02a0ee986d' }
+            one_removed.should be_true
           end
         end
       end

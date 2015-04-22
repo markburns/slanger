@@ -18,6 +18,12 @@ require 'slanger'
 WebMock.disable!
 
 module Slanger; end
+Slanger::Logger
+
+if ENV["DEBUGGER"]=="true"
+  puts "debugger enabled"
+  require "byebug"
+end
 
 def errback
   @errback ||= Proc.new { |e| fail 'cannot connect to slanger. your box might be too slow. try increasing sleep value in the before block' }

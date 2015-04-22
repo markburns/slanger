@@ -51,6 +51,8 @@ module Slanger
     end
 
     def authenticate
+      Slanger.debug "authenticate app_key: #{app_key} @connection: #{@connection.inspect}"
+
       if !valid_app_key? app_key
         error({ code: 4001, message: "Could not find app by key #{app_key}" })
         @socket.close_websocket

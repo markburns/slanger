@@ -12,13 +12,18 @@ require 'fiber'
 
 module Slanger
   class PresenceChannel < Channel
+    def initialize(attrs)
+      super(attrs)
+
+      set_roster
+    end
     # Send an event received from Redis to the EventMachine channel
     def dispatch(message, channel_id)
       Slanger.debug "PresenceChannel dispatch message: channel_id: #{channel_id} msg: #{message}"
 
       if channel_id =~ /^slanger:/
         # Messages received from the Redis channel slanger:*  carry info on
-        # subscriptions. Update our subscribers accordingly.
+        # roster. Update our subscribers accordingly.
         update_subscribers message
       else
         push message.to_json
@@ -72,7 +77,7 @@ module Slanger
     end
 
     def subscribers
-      Hash[subscriptions.map { |_,v| [v['user_id'], v['user_info']] }]
+      Hash[roster.map { |_,v| [v['user_id'], v['user_info']] }]
     end
 
     def unsubscribe(public_subscription_id)
@@ -89,8 +94,8 @@ module Slanger
 
     # This is the state of the presence channel across the system. kept in sync
     # with redis pubsub
-    def subscriptions
-      @subscriptions ||= get_roster || {}
+    def roster
+      @roster ||= {}
     end
 
     def get_roster
@@ -98,9 +103,48 @@ module Slanger
       Fiber.new do
         f = Fiber.current
         Slanger::Redis.hgetall(channel_id).
-          callback { |res| f.resume res }
+          callback { |res| 
+          f.resume res 
+        }
         Fiber.yield
       end.resume
+    end
+
+    def set_roster
+      Slanger.debug "#{__method__} start"
+      # Read subscription infos from Redis.
+
+      Fiber.new do
+        f = Fiber.current
+        Slanger.debug "hgetall #{redis_subscription_count_key} start"
+        Slanger::Redis.hgetall(redis_subscription_count_key).
+          callback(&set_roster_callback(f)).
+          errback(&roster_error(f))
+        Fiber.yield
+      end.resume
+    end
+
+    def set_roster_callback(f)
+      Proc.new do |res|
+        Slanger.debug "hgetall complete: #{redis_subscription_count_key} res: #{res}"
+        formatted_roster = redis_to_hash(res)
+        Slanger.debug "#{__method__}(#{channel_id}): formatted_roster: #{formatted_roster}"
+
+        roster
+        @roster.merge! formatted_roster
+        f.resume
+      end
+    end
+
+    def redis_to_hash(array)
+      array.each_slice(2).to_a.inject({}){|result, (k,v)| result[k]= v ; result}
+    end
+
+    def roster_error(f)
+      Proc.new do |e|
+        Slanger.error "get_roster(#{channel_id}) error: #{e}"
+        f.resume
+      end
     end
 
     def roster_add(key, value, on_add_callback)
@@ -143,17 +187,17 @@ module Slanger
 
     def update_subscribers(message)
       if message['online']
-        # Don't tell the channel subscriptions a new member has been added if the subscriber data
-        # is already present in the subscriptions hash, i.e. multiple browser windows open.
-        unless subscriptions.has_value? message['channel_data']
+        # Don't tell the channel subscribters a new member has been added if the subscriber data
+        # is already present in the roster hash, e.g. multiple browser windows open.
+        unless roster.has_value? message['channel_data']
           push payload('pusher_internal:member_added', message['channel_data'])
         end
-        subscriptions[message['subscription_id']] = message['channel_data']
+        roster[message['subscription_id']] = message['channel_data']
       else
         # Don't tell the channel subscriptions the member has been removed if the subscriber data
-        # still remains in the subscriptions hash, i.e. multiple browser windows open.
-        subscriber = subscriptions.delete message['subscription_id']
-        if subscriber && !subscriptions.has_value?(subscriber)
+        # still remains in the roster hash, e.g. multiple browser windows open.
+        subscriber = roster.delete message['subscription_id']
+        if subscriber && !roster.has_value?(subscriber)
           push payload('pusher_internal:member_removed', { user_id: subscriber['user_id'] })
         end
       end
