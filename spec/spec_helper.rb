@@ -23,6 +23,7 @@ Slanger::Logger
 if ENV["DEBUGGER"]=="true"
   puts "debugger enabled"
   require "byebug"
+  require "pry-byebug"
 end
 
 def errback
