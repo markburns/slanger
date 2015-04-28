@@ -71,8 +71,11 @@ describe 'Integration' do
           end
         end
 
-        client1_messages.one? { |m| m['event'] == 'client-something' }.should be_true
-        client2_messages.none?  { |m| m['event'] == 'client-something' }.should be_true
+        length = client1_messages.select { |m| m['event'] == 'client-something' }.length
+        length.should eq 1
+
+        length = client2_messages.select { |m| m['event'] == 'client-something' }.length
+        length.should eq 0
       end
     end
   end
