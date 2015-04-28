@@ -110,8 +110,12 @@ STDOUT.sync = true
 EM.epoll
 EM.kqueue
 
+
 EM.run do
   File.tap { |f| require f.expand_path(f.join(f.dirname(__FILE__),'..', 'slanger.rb')) }
+  #force autoload
+  Slanger::Logger
+
   log_file  = options[:log_file]  || STDOUT
   log_level = options[:log_level] || Logger::INFO
 
@@ -126,24 +130,24 @@ EM.run do
 
   Slanger::Service.run
 
-  Slanger.info "\n"
-  Slanger.info "\n"
-  Slanger.info "    .d8888b.  888                                               "
-  Slanger.info "   d88P  Y88b 888                                               "
-  Slanger.info "   Y88b.      888                                               "
-  Slanger.info '    "Y888b.   888  8888b.  88888b.   .d88b.   .d88b.  888d888   '
-  Slanger.info '       "Y88b. 888     "88b 888 "88b d88P"88b d8P  Y8b 888P"     '
-  Slanger.info '         "888 888 .d888888 888  888 888  888 88888888 888       '
-  Slanger.info "   Y88b  d88P 888 888  888 888  888 Y88b 888 Y8b.     888       "
-  Slanger.info '    "Y8888P"  888 "Y888888 888  888  "Y88888  "Y8888  888       '
-  Slanger.info "                                         888                    "
-  Slanger.info "                                    Y8b d88P                    "
-  Slanger.info '                                    "Y88P"                      '
-  Slanger.info "\n" * 2
+  Slanger.info <<-LOGO
+
+      .d8888b.  888
+     d88P  Y88b 888
+     Y88b.      888
+      "Y888b.   888  8888b.  88888b.   .d88b.   .d88b.  888d888
+         "Y88b. 888     "88b 888 "88b d88P"88b d8P  Y8b 888P"
+           "888 888 .d888888 888  888 888  888 88888888 888
+     Y88b  d88P 888 888  888 888  888 Y88b 888 Y8b.     888
+      "Y8888P"  888 "Y888888 888  888  "Y88888  "Y8888  888
+                                           888
+                                      Y8b d88P
+                                      "Y88P"
+  LOGO
 
   Slanger.info "Running Slanger v.#{Slanger::VERSION}"
   Slanger.info "\n"
 
-  Slanger.info "Slanger API server       listening on port #{options[:api_port]}"
-  Slanger.info "Slanger WebSocket server listening on port #{options[:websocket_port]}"
+  Slanger.info "API server       listening on port #{options[:api_port]}"
+  Slanger.info "WebSocket server listening on port #{options[:websocket_port]}"
 end
