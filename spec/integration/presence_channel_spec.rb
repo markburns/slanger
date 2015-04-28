@@ -71,9 +71,15 @@ describe 'Integration' do
 
           messages.should have_attributes connection_established: true, count: 2
 
+          data = {"presence"=>{"count"=>1,
+                               "ids"=>["0f177369a3b71275d25ab1b44db9f95f"],
+                               "hash"=>{"0f177369a3b71275d25ab1b44db9f95f"=>{"name"=>"SG"}}}}
+
+          binding.pry
+
           messages.last.should == {"channel"=>"presence-channel",
                                    "event"  =>"pusher_internal:subscription_succeeded",
-                                   "data"   => "{\"presence\":{\"count\":1,\"ids\":[\"0f177369a3b71275d25ab1b44db9f95f\"],\"hash\":{\"0f177369a3b71275d25ab1b44db9f95f\":{\"name\":\"SG\"}}}}"}
+                                   "data"   => data.to_json}
         end
 
 

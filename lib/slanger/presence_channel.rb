@@ -5,7 +5,6 @@
 # EM channel. Keeps data on the subscribers to send it to clients.
 #
 
-require 'glamazon'
 require 'eventmachine'
 require 'forwardable'
 require 'fiber'
@@ -32,10 +31,9 @@ module Slanger
 
     def subscribe(msg, on_subscribe_callback, &blk)
       channel_data = JSON.parse msg['data']['channel_data']
-      public_subscription_id = SecureRandom.uuid
+      public_subscription_id = next_random
 
       # Send event about the new subscription to the Redis slanger:connection_notification Channel.
-      #
       publisher = publish_connection_status_change(
         subscription_id: public_subscription_id,
         online: true,
@@ -49,6 +47,10 @@ module Slanger
       roster_add(public_subscription_id, channel_data, publisher_callback)
 
       public_subscription_id
+    end
+
+    def next_random
+      SecureRandom.uuid
     end
 
     def publisher_callback_from(publisher, public_subscription_id, on_subscribe_callback, &blk)
@@ -77,7 +79,7 @@ module Slanger
     end
 
     def subscribers
-      Hash[roster.map { |_,v| [v['user_id'], v['user_info']] }]
+      Hash[roster.values.map { |v| [v['user_id'], v['user_info']] }]
     end
 
     def unsubscribe(public_subscription_id)
@@ -87,28 +89,11 @@ module Slanger
       # Remove subscription data from Redis
       roster_remove public_subscription_id
       # Notify all instances
-      publish_connection_status_change subscription_id: public_subscription_id, online: false, channel: channel_id
+      publish_connection_status_change subscription_id: public_subscription_id,
+        online: false, channel: channel_id
     end
 
     private
-
-    # This is the state of the presence channel across the system. kept in sync
-    # with redis pubsub
-    def roster
-      @roster ||= {}
-    end
-
-    def get_roster
-      # Read subscription infos from Redis.
-      Fiber.new do
-        f = Fiber.current
-        Slanger::Redis.hgetall(channel_id).
-          callback { |res| 
-          f.resume res 
-        }
-        Fiber.yield
-      end.resume
-    end
 
     def set_roster
       Slanger.debug "#{__method__} start"
@@ -116,8 +101,8 @@ module Slanger
 
       Fiber.new do
         f = Fiber.current
-        Slanger.debug "hgetall #{redis_subscription_count_key} start"
-        Slanger::Redis.hgetall(redis_subscription_count_key).
+        Slanger.debug "hgetall #{channel_id} start"
+        Slanger::Redis.hgetall(channel_id).
           callback(&set_roster_callback(f)).
           errback(&roster_error(f))
         Fiber.yield
@@ -126,18 +111,22 @@ module Slanger
 
     def set_roster_callback(f)
       Proc.new do |res|
-        Slanger.debug "hgetall complete: #{redis_subscription_count_key} res: #{res}"
+        Slanger.debug "hgetall complete: #{channel_id} res: #{res}"
         formatted_roster = redis_to_hash(res)
         Slanger.debug "#{__method__}(#{channel_id}): formatted_roster: #{formatted_roster}"
 
-        roster
+        @roster ||= {}
+        byebug
         @roster.merge! formatted_roster
         f.resume
       end
     end
 
     def redis_to_hash(array)
-      array.each_slice(2).to_a.inject({}){|result, (k,v)| result[k]= v ; result}
+      array.each_slice(2).to_a.inject({}) do |result, (k,v)| 
+        result[k]= eval(v)
+        result
+      end
     end
 
     def roster_error(f)
@@ -176,6 +165,9 @@ module Slanger
         }
     end
 
+    def roster
+      @roster ||= {}
+    end
 
 
     # This is used map public subscription ids to em channel subscription ids.
@@ -186,13 +178,14 @@ module Slanger
     end
 
     def update_subscribers(message)
+        byebug
       if message['online']
+        roster[message['subscription_id']] = message['channel_data']
         # Don't tell the channel subscribters a new member has been added if the subscriber data
         # is already present in the roster hash, e.g. multiple browser windows open.
         unless roster.has_value? message['channel_data']
           push payload('pusher_internal:member_added', message['channel_data'])
         end
-        roster[message['subscription_id']] = message['channel_data']
       else
         # Don't tell the channel subscriptions the member has been removed if the subscriber data
         # still remains in the roster hash, e.g. multiple browser windows open.
