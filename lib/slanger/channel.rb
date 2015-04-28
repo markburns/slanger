@@ -19,7 +19,11 @@ module Slanger
       def from channel_id
         klass = channel_id[/^presence-/] ? PresenceChannel : Channel
 
-        klass.lookup(channel_id) || klass.create(channel_id: channel_id)
+        klass.find_or_create_by_channel_id(channel_id)
+      end
+
+      def find_or_create_by_channel_id(channel_id)
+        lookup(channel_id) || create(channel_id: channel_id).tap {|c| all[channel_id]=c }
       end
 
       def lookup(channel_id)
@@ -52,22 +56,32 @@ module Slanger
       @em_channel ||= EM::Channel.new
     end
 
-    def subscribe *a, &blk
-      Slanger::Redis.hincrby('channel_subscriber_count', channel_id, 1).
-        callback do |value|
-          Slanger::Webhook.post name: 'channel_occupied', channel: channel_id if value == 1
-        end
-
-      em_channel.subscribe *a, &blk
+    def subscribe(*a, &blk)
+      change_subscriber_count __method__, +1, *a, &blk
     end
 
     def unsubscribe *a, &blk
-      Slanger::Redis.hincrby('channel_subscriber_count', channel_id, -1).
-        callback do |value|
-          Slanger::Webhook.post name: 'channel_vacated', channel: channel_id if value == 0
-        end
+      change_subscriber_count __method__, -1, *a, &blk
+    end
 
-      em_channel.unsubscribe *a, &blk
+    def change_subscriber_count(name, by, *a, &blk)
+      Slanger::Redis.hincrby('channel_subscriber_count', channel_id, by).
+        callback on_subscription_change_callback(name, *a, &blk)
+    end
+
+    def on_subscription_change_callback(type, *args, &blk)
+      Proc.new do |value|
+        em_channel.send(type, *a, &blk)
+
+        name, expected_count =
+          if type == :subscribe
+            ["channel_vacated", 0]
+          else
+            ["channel_occupied",1]
+          end
+
+        Slanger::Webhook.post name: name, channel: channel_id if value == expected_count
+      end
     end
 
 
