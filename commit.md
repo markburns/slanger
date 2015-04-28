@@ -50,3 +50,16 @@ This way even if node 1 crashes, a janitor process can check for the status of t
 various nodes using a health check and strip out the invalid subscriptions 
 from redis and triggering member_removed messages if appropriate.
 
+
+The janitor process
+===================
+
+Perform health check on each present-server redis array
+* find all presence-channels
+  * For each server x that doesn't respond
+    * iterate over the values 
+    * remove any keys matching "node:x"
+    * for each value that becomes empty, send a member_removed message
+
+
+
