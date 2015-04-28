@@ -9,9 +9,9 @@ module Slanger
     end
 
     def subscribe
-      send_payload channel_id, 'pusher_internal:subscription_succeeded'
-
       channel.subscribe { |m| send_message m }
+
+      send_payload channel_id, 'pusher_internal:subscription_succeeded'
     end
 
     private
