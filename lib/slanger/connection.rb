@@ -9,18 +9,26 @@ module Slanger
     def send_message m
       msg = JSON.parse m
       s = msg.delete 'socket_id'
-      socket.send msg.to_json unless s == socket_id
+
+      unless s == socket_id
+        Slanger.info "Sending message #{msg}"
+        socket.send msg.to_json
+      end
     end
 
     def send_payload *args
-      socket.send format(*args)
+      formatted = format(*args)
+      Slanger.info "Sending payload #{formatted}"
+      socket.send formatted
     end
 
     def error e
       begin
         send_payload nil, 'pusher:error', e
+        Slanger.error e
       rescue EventMachine::WebSocket::WebSocketError
         # Raised if connecection already closed. Only seen with Thor load testing tool
+        Slanger.error "Connection closed whilst trying to send error: #{e}"
       end
     end
 

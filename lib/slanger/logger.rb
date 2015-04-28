@@ -21,8 +21,7 @@ module Slanger
 
     %w(info debug warn error).each do |m|
       define_method(m) do |msg|
-        message = "Slanger: #{msg}"
-        logger.send(m, message)
+        logger.send(m, msg)
       end
     end
   end
