@@ -56,6 +56,9 @@ GEM
       coderay (~> 1.1.0)
       method_source (~> 0.8.1)
       slop (~> 3.4)
+    pry-byebug (2.0.0)
+      byebug (~> 3.4)
+      pry (~> 0.10)
     pusher (0.14.2)
       httpclient (~> 2.4)
       multi_json (~> 1.0)
@@ -98,6 +101,7 @@ DEPENDENCIES
   haml (~> 3.1.2)
   mocha (~> 0.13.2)
   pry (~> 0.10.1)
+  pry-byebug
   pusher (~> 0.14.2)
   rake
   rspec (~> 2.12.0)
