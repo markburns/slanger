@@ -17,18 +17,27 @@ module Slanger
       Thin::Logging.silent = true
 
       create_pid!
-      Rack::Handler::Thin.run Slanger::ApiServer, Host: Slanger::Config.api_host, Port: Slanger::Config.api_port
       @websocket_server_signature = Slanger::WebSocketServer.run
+      Slanger.debug "websocket_server_signature: #{@websocket_server_signature}"
+
+      connection_args = {Host: Slanger::Config.api_host, Port: Slanger::Config.api_port}
+
+      Slanger.info "Starting API server #{connection_args}"
+      Rack::Handler::Thin.run Slanger::ApiServer, connection_args
+      Slanger.debug "API server started"
     rescue
       remove_pid!
     end
 
     def stop
+      Slanger.info "Stopping websocket server"
       raise if websocket_server_signature.nil?
 
       Slanger::WebSocketServer.stop(websocket_server_signature)
-      EM.stop if EM.reactor_running?
 
+      Slanger.info "Stopping API server"
+      EM.stop if EM.reactor_running?
+    ensure
       remove_pid!
     end
 
@@ -36,7 +45,7 @@ module Slanger
 
     def create_pid!
       if pid_file
-        Slanger.logger.info "Creating pid: #{pid_file} #{Process.pid}"
+        Slanger.info "Creating pid: #{pid_file} #{Process.pid}"
         File.open(pid_file, 'w') { |f| f.puts Process.pid }
       end
     end

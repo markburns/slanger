@@ -14,8 +14,9 @@ module Slanger
     def initialize(attrs)
       super(attrs)
 
-      set_roster
+      fetch_roster
     end
+
     # Send an event received from Redis to the EventMachine channel
     def dispatch(message, channel_id)
       Slanger.debug "PresenceChannel dispatch message: channel_id: #{channel_id} msg: #{message}"
@@ -93,12 +94,13 @@ module Slanger
         online: false, channel: channel_id
     end
 
+    def roster
+      @roster ||= {}
+    end
+
     private
 
-    def set_roster
-      Slanger.debug "#{__method__} start"
-      # Read subscription infos from Redis.
-
+    def fetch_roster
       Fiber.new do
         f = Fiber.current
         Slanger.debug "hgetall #{channel_id} start"
@@ -116,7 +118,6 @@ module Slanger
         Slanger.debug "#{__method__}(#{channel_id}): formatted_roster: #{formatted_roster}"
 
         @roster ||= {}
-        byebug
         @roster.merge! formatted_roster
         f.resume
       end
@@ -165,10 +166,6 @@ module Slanger
         }
     end
 
-    def roster
-      @roster ||= {}
-    end
-
 
     # This is used map public subscription ids to em channel subscription ids.
     # em channel subscription ids are incremented integers, so they cannot
@@ -178,7 +175,6 @@ module Slanger
     end
 
     def update_subscribers(message)
-        byebug
       if message['online']
         roster[message['subscription_id']] = message['channel_data']
         # Don't tell the channel subscribters a new member has been added if the subscriber data

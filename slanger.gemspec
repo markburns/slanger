@@ -25,6 +25,7 @@ Gem::Specification.new do |s|
   s.add_dependency                'em-http-request',  '~> 0.3.0'
 
   s.add_development_dependency    'rspec',            '~> 2.12.0'
+  s.add_development_dependency    'pretty_backtrace'
   s.add_development_dependency    'byebug'
   s.add_development_dependency    'pry-byebug'
   s.add_development_dependency    'pusher',           '~> 0.14.2'

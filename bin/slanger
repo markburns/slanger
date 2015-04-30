@@ -125,7 +125,11 @@ EM.run do
   Slanger::Config.load options
 
   %w(INT HUP).each do |s|
-    Signal.trap(s) { Slanger::Service.stop }
+    Signal.trap(s) { 
+      Slanger.info "Trapped signal #{s}"
+      Slanger.info "Stopping slanger"
+      Slanger::Service.stop 
+    }
   end
 
   Slanger::Service.run

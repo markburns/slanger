@@ -29,6 +29,7 @@ GEM
     crack (0.4.2)
       safe_yaml (~> 1.0.0)
     daemons (1.2.2)
+    debug_inspector (0.0.2)
     debugger-linecache (1.2.0)
     diff-lcs (1.1.3)
     em-hiredis (0.2.1)
@@ -52,6 +53,8 @@ GEM
     mocha (0.13.3)
       metaclass (~> 0.0.1)
     multi_json (1.10.1)
+    pretty_backtrace (0.1.2)
+      debug_inspector (~> 0.0.1)
     pry (0.10.1)
       coderay (~> 1.1.0)
       method_source (~> 0.8.1)
@@ -100,6 +103,7 @@ DEPENDENCIES
   byebug
   haml (~> 3.1.2)
   mocha (~> 0.13.2)
+  pretty_backtrace
   pry (~> 0.10.1)
   pry-byebug
   pusher (~> 0.14.2)

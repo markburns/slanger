@@ -16,6 +16,7 @@ module SlangerHelperMethods
 
       Slanger::Service.run
     end
+    Slanger.debug "server_pid #{@server_pid} "
     wait_for_slanger
   end
 
@@ -29,19 +30,35 @@ module SlangerHelperMethods
 
   def wait_for_slanger opts = {}
     opts = { port: 8080 }.update opts
+    wait_for_socket(opts[:port])
+    wait_for_socket(4567)
+  end
+
+  def wait_for_socket(port)
+    retry_count = 100
+    puts "Waiting for slanger on port #{port}..."
     begin
-      TCPSocket.new('0.0.0.0', opts[:port]).close
+      TCPSocket.new('0.0.0.0', port).close
     rescue
+      retry_count -= 1
       sleep 0.005
-      retry
+      if retry_count > 0
+        retry
+      else
+        fail "Slanger start failed connecting to port: #{port}"
+      end
     end
+
   end
 
   def new_websocket opts = {}
     opts = { key: Pusher.key, protocol: 7 }.update opts
     uri = "ws://0.0.0.0:8080/app/#{opts[:key]}?client=js&version=1.8.5&protocol=#{opts[:protocol]}"
 
-    EM::HttpRequest.new(uri).get.tap { |ws| ws.errback &errback }
+    EM::HttpRequest.new(uri).get.tap { |ws| 
+      ws.stream{} #ensure a default empty stream is provided
+      ws.errback &errback 
+    }
   end
 
   def em_stream opts = {}
