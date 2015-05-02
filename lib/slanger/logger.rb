@@ -22,7 +22,7 @@ module Slanger
     %w(info debug warn error).each do |m|
       define_method(m) do |msg|
         path, line, _ = caller[0].split(":")
-        filename = Pathname.new(path).each_filename.to_a[-3..-1].join "/"
+        filename = Pathname.new(path).each_filename.to_a[-3..-1].join "/" rescue ""
         msg  = "#{filename }:#{line} #{msg}"
         logger.send(m, msg)
       end
