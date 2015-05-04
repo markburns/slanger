@@ -15,6 +15,8 @@ require 'pry'
 require 'webmock/rspec'
 require 'slanger'
 
+require "redis"
+
 WebMock.disable!
 
 module Slanger; end
@@ -27,17 +29,6 @@ require 'pretty_backtrace'
 PrettyBacktrace.enable
 
 
-def errback
-  $debugging = $debugging.nil? ? true : nil
-
-  @errback ||= Proc.new { |e|
-    if $debugging
-      $debugging = false
-    end
-
-    fail "Error: #{e}. your box might be too slow. try increasing sleep value in the before block" }
-end
-
 RSpec.configure do |config|
   config.formatter = 'documentation'
   config.color = true
@@ -47,6 +38,13 @@ RSpec.configure do |config|
   config.fail_fast = true
   config.after(:each) { stop_slanger if @server_pid }
   config.before :all do
+    redis = Redis.new
+
+    redis.keys("*").each do |k|
+      Slanger.debug "deleting #{k}"
+      redis.del k
+    end
+
     Pusher.tap do |p|
       p.host   = '0.0.0.0'
       p.port   = 4567

@@ -71,6 +71,7 @@ GEM
     rack-protection (1.5.3)
       rack
     rake (10.4.2)
+    redis (3.2.1)
     rspec (2.12.0)
       rspec-core (~> 2.12.0)
       rspec-expectations (~> 2.12.0)
@@ -108,6 +109,7 @@ DEPENDENCIES
   pry-byebug
   pusher (~> 0.14.2)
   rake
+  redis
   rspec (~> 2.12.0)
   slanger!
   timecop (~> 0.3.5)

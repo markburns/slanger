@@ -24,8 +24,8 @@ module Slanger
 
     def error e
       begin
-        send_payload nil, 'pusher:error', e
         Slanger.error e
+        send_payload nil, 'pusher:error', e
       rescue EventMachine::WebSocket::WebSocketError
         # Raised if connecection already closed. Only seen with Thor load testing tool
         Slanger.error "Connection closed whilst trying to send error: #{e}"
@@ -33,12 +33,18 @@ module Slanger
     end
 
     def establish
-      @socket_id = SecureRandom.uuid
+      @socket_id = RandomSocketId.next
 
       send_payload nil, 'pusher:connection_established', {
         socket_id: @socket_id,
-        activity_timeout: 1 #Slanger::Config.activity_timeout
+        activity_timeout: Slanger::Config.activity_timeout
       }
+    end
+
+    class RandomSocketId
+      def self.next
+        SecureRandom.uuid
+      end
     end
 
     private

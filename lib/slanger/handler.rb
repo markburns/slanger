@@ -60,6 +60,7 @@ module Slanger
         error({ code: 4007, message: "Unsupported protocol version" })
         @socket.close_websocket
       else
+        Slanger.info "Authenticate successful"
         return connection.establish
       end
     end
@@ -81,7 +82,8 @@ module Slanger
       if @subscriptions[channel_id]
         error({ code: nil, message: "Existing subscription to #{channel_id}" })
       else
-        @subscriptions[channel_id] = klass.new(connection.socket, connection.socket_id, msg).subscribe
+        subscription = klass.new(connection.socket, connection.socket_id, msg)
+        @subscriptions[channel_id] = subscription.subscribe
       end
     end
 

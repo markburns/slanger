@@ -22,10 +22,11 @@ module Slanger
                          tls_options: Slanger::Config[:tls_options]
         end
 
+        # Also subscribe the slanger daemon to a Redis channel used for events concerning subscriptions.
+        Slanger::Redis.subscribe 'slanger:connection_notification'
+
         EM::WebSocket.start options do |ws|
           attach_handlers ws
-          # Also subscribe the slanger daemon to a Redis channel used for events concerning subscriptions.
-          Slanger::Redis.subscribe 'slanger:connection_notification'
         end
       end
     end
@@ -52,7 +53,7 @@ module Slanger
       ws.onclose       {
         #no-op for healthchecks
         unless ws.health_check
-          Slanger.info "Websocket onclose: #{ws}"
+          Slanger.info "Websocket onclose socket_id: #{ws.connection_handler.connection.socket_id}"
           ws.connection_handler.onclose
         end
       }

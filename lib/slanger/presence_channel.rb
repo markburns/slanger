@@ -12,6 +12,7 @@ require 'fiber'
 module Slanger
   class PresenceChannel < Channel
     def initialize(attrs)
+      Slanger.debug "initialize presence channel #{attrs} #{caller.join "\n"}"
       super(attrs)
 
       fetch_roster
@@ -84,7 +85,7 @@ module Slanger
     end
 
     def unsubscribe(public_subscription_id)
-      Slanger.debug "Leaving presence channel - notify_all_instances"
+      Slanger.debug "Leaving presence channel #{public_subscription_id} - notify_all_instances"
       # Unsubcribe from EM::Channel
       em_channel.unsubscribe(public_to_em_channel_table.delete(public_subscription_id))
       # Remove subscription data from Redis
@@ -139,12 +140,23 @@ module Slanger
 
     def roster_add(key, value, on_add_callback)
       # Add subscription info to Redis.
-      Slanger::Redis.hset(channel_id, key, value).callback{on_add_callback.call}
+      Slanger::Redis.hset(channel_id, key, value).
+        callback{
+        Slanger.debug "roster_add successful channel_id: #{channel_id} key: #{key}, value: #{value}"
+        on_add_callback.call
+      }.errback {|e|
+        Slanger.error "roster_add failed #{e} channel_id: #{channel_id} key: #{key} value: #{value}"
+      }
     end
 
     def roster_remove(key)
+      Slanger.debug "removing from redis"
       # Remove subscription info from Redis.
-      Slanger::Redis.hdel(channel_id, key)
+      Slanger::Redis.hdel(channel_id, key).callback do
+        Slanger.debug "roster_remove successful channel_id: #{channel_id} key: #{key}"
+      end.errback do |e|
+        Slanger.error "roster_remove failed #{e} channel_id: #{channel_id} key: #{key}"
+      end
     end
 
     def publish_connection_status_change(payload, retry_count=0)

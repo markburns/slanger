@@ -55,10 +55,14 @@ module SlangerHelperMethods
     opts = { key: Pusher.key, protocol: 7 }.update opts
     uri = "ws://0.0.0.0:8080/app/#{opts[:key]}?client=js&version=1.8.5&protocol=#{opts[:protocol]}"
 
-    EM::HttpRequest.new(uri).get.tap { |ws| 
-      ws.stream{} #ensure a default empty stream is provided
-      ws.errback &errback 
-    }
+    ws = EM::HttpRequest.new(uri).get :keepalive => true
+    ws.stream{ |*msg|
+      Slanger.error "Default stream output: #{msg}"
+    
+    } #ensure a default empty stream is provided
+    ws.errback do |e|
+      fail "Error with websocket connection : #{e}"
+    end
   end
 
   def em_stream opts = {}
@@ -92,16 +96,20 @@ module SlangerHelperMethods
   end
 
   def send_subscribe options
+    Slanger.debug "spec send_subscribe #{options}"
+
     info      = { user_id: options[:user_id], user_info: { name: options[:name] } }
     socket_id = JSON.parse(options[:message]['data'])['socket_id']
     to_sign   = [socket_id, 'presence-channel', info.to_json].join ':'
 
     digest = OpenSSL::Digest::SHA256.new
+    websocket = options[:user]
+    auth = [Pusher.key, OpenSSL::HMAC.hexdigest(digest, Pusher.secret, to_sign)].join(':')
 
-    options[:user].send({
+    websocket.send({
       event: 'pusher:subscribe',
       data: {
-        auth: [Pusher.key, OpenSSL::HMAC.hexdigest(digest, Pusher.secret, to_sign)].join(':'),
+        auth: auth,
         channel_data: info.to_json,
         channel: 'presence-channel'
       }

@@ -19,23 +19,28 @@ module Slanger
       def from channel_id
         klass = channel_id[/^presence-/] ? PresenceChannel : Channel
 
+        byebug
         klass.find_or_create_by_channel_id(channel_id)
       end
 
       def find_or_create_by_channel_id(channel_id)
-        lookup(channel_id) || create(channel_id: channel_id).tap {|c| all[channel_id]=c }
+        lookup(channel_id) || begin
+
+          instance = create(channel_id: channel_id)
+          all[channel_id]  = instance
+        end
       end
 
       def lookup(channel_id)
-        all.detect { |o| o.channel_id == channel_id }
+        all[channel_id]
       end
 
       def create(params = {})
-        new(params).tap { |r| all << r }
+        new(params)
       end
 
       def all
-        @all ||= []
+        @all ||= {}
       end
 
       def unsubscribe channel_id, subscription_id
