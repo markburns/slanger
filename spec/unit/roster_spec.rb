@@ -1,28 +1,25 @@
 require 'spec_helper'
 require 'slanger'
-require 'rspec-mocks'
 
 describe 'Slanger::Roster' do
   let(:roster) { Slanger::Roster.new 'presence-channel' }
+  let(:redis) { double "redis" }
 
   context "success case" do
-    before do
-      RSpec.configure do |c|
-        c.mock_framework = :rspec
-      end
-      Slanger::Redis.expects(:hgetall).returns redis
-    end
-
-
-
-    let(:redis) { double("redis", callback: callback)}
-    let(:callback) { ->(success){ success.call(result); chain } }
-    let(:result) { [] }
-    let(:chain) { mock("chain", errback: ->(e){ }) }
     it do
-      roster.fetch
+      em_thread do 
+        expect(Slanger::Redis).to receive(:hgetall).
+          and_return(redis)
 
-      expect(roster.internal_roster).to eq {}
+        something = double "something", errback: nil
+        expect(redis).to receive(:callback).
+          and_yield([1,"2"]).and_return something
+
+        roster.fetch
+
+        expect(roster.internal_roster).to eq({1 => 2})
+        EM.stop
+      end
     end
 
   end

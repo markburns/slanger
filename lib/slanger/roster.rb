@@ -23,19 +23,6 @@ module Slanger
       Hash[@internal_roster.values.map { |v| [v['user_id'], v['user_info']] }]
     end
 
-    def fetch
-      Fiber.new do
-        f = Fiber.current
-        Slanger.debug "hgetall #{channel_id} start"
-        byebug
-
-        Slanger::Redis.hgetall(channel_id).
-          callback(&success_callback(f)).
-          errback(&error_callback(f))
-        Fiber.yield
-      end.resume
-    end
-
     def add(key, value, on_add_callback)
       # Add subscription info to Redis.
       Slanger::Redis.hset(channel_id, key, value).
@@ -47,6 +34,7 @@ module Slanger
       }
     end
 
+
     def remove(key)
       Slanger.debug "removing from redis"
       # Remove subscription info from Redis.
@@ -57,9 +45,17 @@ module Slanger
       end
     end
 
+    def fetch
+      Slanger.debug "hgetall #{channel_id} start"
+
+      Slanger::Redis.hgetall(channel_id).
+        callback(&success_callback).
+        errback(&error_callback)
+    end
+
     private
 
-    def success_callback(f)
+    def success_callback
       Proc.new do |res|
         Slanger.debug "hgetall complete: #{channel_id} res: #{res}"
         formatted_roster = redis_to_hash(res)
@@ -67,7 +63,12 @@ module Slanger
 
         @internal_roster ||= {}
         @internal_roster.merge! formatted_roster
-        f.resume
+      end
+    end
+
+    def error_callback
+      Proc.new do |e|
+        Slanger.error "get_roster(#{channel_id}) error: #{e}"
       end
     end
 
@@ -75,13 +76,6 @@ module Slanger
       array.each_slice(2).to_a.inject({}) do |result, (k,v)| 
         result[k]= eval(v)
         result
-      end
-    end
-
-    def error_callback(f)
-      Proc.new do |e|
-        Slanger.error "get_roster(#{channel_id}) error: #{e}"
-        f.resume
       end
     end
 
