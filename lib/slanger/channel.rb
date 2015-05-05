@@ -19,24 +19,7 @@ module Slanger
       def from channel_id
         klass = channel_id[/^presence-/] ? PresenceChannel : Channel
 
-        byebug
-        klass.find_or_create_by_channel_id(channel_id)
-      end
-
-      def find_or_create_by_channel_id(channel_id)
-        lookup(channel_id) || begin
-
-          instance = create(channel_id: channel_id)
-          all[channel_id]  = instance
-        end
-      end
-
-      def lookup(channel_id)
-        all[channel_id]
-      end
-
-      def create(params = {})
-        new(params)
+        klass.all[channel_id] ||= klass.new(channel_id)
       end
 
       def all
@@ -52,8 +35,8 @@ module Slanger
       end
     end
 
-    def initialize(attrs)
-      @channel_id = attrs.with_indifferent_access[:channel_id]
+    def initialize(channel_id)
+      @channel_id = channel_id
       Slanger::Redis.subscribe channel_id
     end
 
