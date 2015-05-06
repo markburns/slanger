@@ -55,19 +55,16 @@ module Slanger
     end
 
     def change_subscriber_count(name, by, *a, &blk)
-      Slanger::Redis.hincrby('channel_subscriber_count', channel_id, by).
-        callback on_subscription_change_callback(name, *a, &blk)
-    end
+      hincrby = Slanger::Redis.hincrby('channel_subscriber_count', channel_id, by)
 
-    def on_subscription_change_callback(type, *args, &blk)
-      Proc.new do |value|
-        em_channel.send(type, *a, &blk)
+      hincrby.callback do |value|
+        em_channel.send(name, *a, &blk)
 
         name, expected_count =
-          if type == :subscribe
-            ["channel_vacated", 0]
-          else
+          if name.to_sym == :subscribe
             ["channel_occupied",1]
+          else
+            ["channel_vacated", 0]
           end
 
         Slanger::Webhook.post name: name, channel: channel_id if value == expected_count
