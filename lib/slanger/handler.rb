@@ -14,6 +14,7 @@ module Slanger
     delegate :error, :send_payload, to: :connection
 
     def initialize(socket, handshake)
+      Slanger.debug "Create new handler #{socket} #{handshake}"
       @socket        = socket
       @handshake     = handshake
       @connection    = Connection.new(@socket)
@@ -106,7 +107,7 @@ module Slanger
     end
 
     def valid_app_key? app_key
-      Slanger::Config.app_key == app_key
+      Slanger::Config[:app_key] == app_key
     end
 
     def subscription_klass channel_id

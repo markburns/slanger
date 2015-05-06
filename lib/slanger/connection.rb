@@ -18,7 +18,7 @@ module Slanger
 
     def send_payload *args
       formatted = format(*args)
-      Slanger.info "Sending payload #{formatted}"
+      Slanger.info "Sending payload to websocket: #{socket_id} #{formatted}"
       socket.send formatted
     end
 
