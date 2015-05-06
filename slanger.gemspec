@@ -33,7 +33,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency    'haml',             '~> 3.1.2'
   s.add_development_dependency    'rake'
   s.add_development_dependency    'timecop',          '~> 0.3.5'
-  s.add_development_dependency    'webmock',          '~> 1.8.7'
+  s.add_development_dependency    'webmock'
   s.add_development_dependency    'mocha',            '~> 1.1.0'
   s.add_development_dependency    'pry',              '~> 0.10.1'
   s.add_development_dependency    'redis'
