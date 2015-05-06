@@ -35,8 +35,9 @@ RSpec.configure do |config|
   config.mock_framework = :rspec
   config.order = 'random'
   config.include SlangerHelperMethods
-  config.fail_fast = true
+  config.fail_fast = false
   config.after(:each) { stop_slanger if server_pids.any? }
+  config.raise_errors_for_deprecations!
   config.around(:each) {|e| 
     if ENV["SKIP_TIMEOUT"]
       e.run 
