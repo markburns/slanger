@@ -19,7 +19,7 @@ describe 'Integration' do
             end
           end
 
-          messages.should have_attributes connection_established: true, id_present: true,
+          expect(messages).to have_attributes connection_established: true, id_present: true,
             count: 2,
             last_event: 'pusher:error'
 
@@ -69,17 +69,15 @@ describe 'Integration' do
             end
           end
 
-          messages.should have_attributes connection_established: true, count: 2
+          expect(messages).to have_attributes connection_established: true, count: 2
 
           data = {"presence"=>{"count"=>1,
                                "ids"=>["0f177369a3b71275d25ab1b44db9f95f"],
                                "hash"=>{"0f177369a3b71275d25ab1b44db9f95f"=>{"name"=>"SG"}}}}
 
-          binding.pry
-
-          messages.last.should == {"channel"=>"presence-channel",
+          expect(messages.last).to eq({"channel"=>"presence-channel",
                                    "event"  =>"pusher_internal:subscription_succeeded",
-                                   "data"   => data.to_json}
+                                   "data"   => data.to_json})
         end
 
 
@@ -100,6 +98,7 @@ describe 'Integration' do
                 new_websocket.tap do |u|
                   u.stream do |message|
                     message = JSON.parse(message)
+
                     if message['event'] == 'pusher:connection_established'
                       send_subscribe \
                         user: u, user_id: '37960509766262569d504f02a0ee986d',
@@ -108,18 +107,19 @@ describe 'Integration' do
                   end
                 end
               else
+              byebug
                 EM.stop
               end
 
             end
 
-            messages.should have_attributes connection_established: true, count: 3
+            expect(messages).to have_attributes connection_established: true, count: 3
             # Channel id should be in the payload
             messages[1].should == {"channel"=>"presence-channel", "event"=>"pusher_internal:subscription_succeeded",
                                      "data"=>"{\"presence\":{\"count\":1,\"ids\":[\"0f177369a3b71275d25ab1b44db9f95f\"],\"hash\":{\"0f177369a3b71275d25ab1b44db9f95f\":{\"name\":\"SG\"}}}}"}
 
-            messages.last.should == {"channel"=>"presence-channel", "event"=>"pusher_internal:member_added",
-                                     "data"=>{"user_id"=>"37960509766262569d504f02a0ee986d", "user_info"=>{"name"=>"CHROME"}}}
+            expect(messages.last).to eq({"channel"=>"presence-channel", "event"=>"pusher_internal:member_added",
+                                     "data"=>{"user_id"=>"37960509766262569d504f02a0ee986d", "user_info"=>{"name"=>"CHROME"}}})
           end
 
           it 'does not send multiple member added and member removed messages if one subscriber opens multiple connections, i.e. multiple browser tabs.' do
@@ -134,17 +134,12 @@ describe 'Integration' do
               when 2
                 10.times do
                   new_websocket.tap do |u|
-                      Slanger.error "new websocket #{u}"
                     u.stream do |message|
-                      Slanger.error "new stream message #{message}"
                       # remove stream callback
                       ## close the connection in the next tick as soon as subscription is acknowledged
                       u.stream {
 
-                        Slanger.error "next stream"
-                        EM.next_tick { 
-                        Slanger.error "close connection #{u}"
-                          u.close_connection } }
+                        EM.next_tick { u.close_connection } }
 
                       send_subscribe({ user: u,
                          user_id: '37960509766262569d504f02a0ee986d',
@@ -161,10 +156,10 @@ describe 'Integration' do
 
             # There should only be one set of presence messages sent to the reference user for the second user.
             one_added = messages.one? { |message| message['event'] == 'pusher_internal:member_added'   && message['data']['user_id'] == '37960509766262569d504f02a0ee986d' }
-            one_added.should be_true
+            expect(one_added).to be_true
 
             one_removed = messages.one? { |message| message['event'] == 'pusher_internal:member_removed' && message['data']['user_id'] == '37960509766262569d504f02a0ee986d' }
-            one_removed.should be_true
+            expect(one_removed).to be_true
           end
         end
       end

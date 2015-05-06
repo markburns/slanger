@@ -1,80 +1,75 @@
 #encoding: utf-8
 
 require 'spec_helper'
+require "fiber"
 
 describe "PresenceChannel Roster" do
 
   context "with multiple instances of channel connections to the same PresenceChannel (i.e. multiple nodes)" do
-    #the slanger node memoizes channels in a class instance variable
-    #this sidesteps that memoization so mimicking multiple nodes
-    let(:presence_1) { Slanger::PresenceChannel.new :channel_id => "presence-channel" }
-    let(:presence_2) { Slanger::PresenceChannel.new :channel_id => "presence-channel" }
+    def start_ha_proxy
+      Slanger.debug "Starting haproxy"
+
+      fork_reactor do
+        exec "haproxy -f spec/support/haproxy.cfg"
+      end
+    end
+
+    after do
+      `killall -9 haproxy`
+    end
 
     before do
-      start_slanger
+      start_slanger(websocket_port: 8081, api_port: 4568, &socket_id_block(1, 3))
+      start_slanger(websocket_port: 8082, api_port: 4569, &socket_id_block(2, 4))
 
-      Slanger::Connection::RandomSocketId.
-        expects(:next).
-        times(4).
-        returns( "random-socket-id-1", "random-socket-id-2", "random-socket-id-3", "random-socket-id-4")
+      start_ha_proxy
+      wait_for_socket(8080)
+      wait_for_socket(4567)
+    end
 
-      em_stream do
-        Slanger::PresenceChannel.
-          expects(:create).
-          times(2).
-          returns(presence_1, presence_2)
-        presence_1.expects(:next_random).returns "random-subscription-id-1"
-        presence_2.expects(:next_random).returns "random-subscription-id-2"
+    def socket_id_block(*ids)
+      Proc.new do
+        expect(Slanger::Connection::RandomSocketId).
+          to receive(:next).
+          and_return(*ids.map{|id| "random-socket-id-#{id}"})
 
-
-        EM.stop
+        allow(Slanger).to receive(:node_id).and_return(*ids)
       end
-
-      Slanger.expects(:node_id).times(2).returns(1, 2)
     end
 
     it do
-      messages = em_stream do |ws_1, messages|
-        case messages.length
-        when 1
+      roster_1 = Slanger::Roster.new "presence-channel"
 
-          sleep 0.1
-          send_subscribe(user: ws_1,
-                         user_id: '0f177369a3b71275d25ab1b44db9f95f',
-                         name: 'MB',
-                         message: messages[0])
-        when 2
-          ws_2 = new_websocket
-          Slanger.error "sleep 1"
-          sleep 1
-          send_subscribe(user: ws_2,
-                         user_id: '1234',
-                         name: 'LG',
-                         message: messages[1])
-          Slanger.error "sleep 0.1"
-          sleep 0.5
+      em_thread do
+        ws_1 = new_websocket
 
-        when 3
-          EM.stop
+        user = {user: ws_1, user_id: '0f177369a3b71275d25ab1b44db9f95f', name: 'MB'}
+        subscribe_to_presence_channel(ws_1, user, "random-socket-id-1")
+
+        ws_2 = new_websocket
+        subscribe_to_presence_channel(ws_2, user, "random-socket-id-2")
+
+        EM.add_timer(1) do
+          Slanger.error "SPEC before fetch"
+          roster_1.fetch
+
+          EM.add_timer(0.2) do
+            Slanger.error "SPEC after fetch"
+            user_1 = {"user_id" => "0f177369a3b71275d25ab1b44db9f95f", "user_info" => {}}
+
+            expected = {
+              user_1 => {
+                "node:1" => ["subscription:abc"],
+                "node:2" => ["subscription:def"]
+              }
+            }
+
+            expect(roster_1.internal_roster).to eq expected
+
+            EM.stop
+          end
         end
       end
-
-      user_1 = {"user_id" => "0f177369a3b71275d25ab1b44db9f95f", "user_info" => {}}
-
-      roster = {
-        user_1 => {
-          "node:1" => ["subscription:random-subscription-id-1"],
-          "node:2" => ["subscription:random-subscription-id-2"]
-        }
-      }
-
-      presence_1.roster.should == roster
-
-      presence_1.subscribers.length.should == 2
-      presence_2.subscribers.length.should == 2
-
-
-
 
     end
   end

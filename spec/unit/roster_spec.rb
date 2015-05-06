@@ -12,6 +12,7 @@ describe 'Slanger::Roster' do
           and_return(redis)
 
         something = double "something", errback: nil
+
         expect(redis).to receive(:callback).
           and_yield([1,"2"]).and_return something
 

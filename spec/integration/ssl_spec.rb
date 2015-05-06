@@ -3,7 +3,7 @@ require 'spec_helper'
 describe 'Integration' do
   describe 'Slanger when configured to use SSL' do
     it 'encrypts the connection' do
-      start_slanger_with_options tls_options: {
+      start_slanger tls_options: {
         cert_chain_file:  'spec/server.crt',
         private_key_file: 'spec/server.key'
       }

@@ -25,18 +25,28 @@ Slanger::Logger
 require "byebug"
 require "pry-byebug"
 
-require 'pretty_backtrace'
-PrettyBacktrace.enable
+#require 'pretty_backtrace'
+#PrettyBacktrace.enable
 
 
 RSpec.configure do |config|
   config.formatter = 'documentation'
   config.color = true
-  config.mock_framework = :mocha
+  config.mock_framework = :rspec
   config.order = 'random'
   config.include SlangerHelperMethods
   config.fail_fast = true
-  config.after(:each) { stop_slanger if @server_pid }
+  config.after(:each) { stop_slanger if server_pids.any? }
+  config.around(:each) {|e| 
+    if ENV["SKIP_TIMEOUT"]
+      e.run 
+    else
+      Timeout.timeout 1 do
+        e.run
+      end
+    end
+
+  }
   config.before :all do
     redis = Redis.new
 
