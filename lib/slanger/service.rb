@@ -13,20 +13,52 @@ module Slanger
     end
 
     def run
+      Slanger.debug "Slanger::Service.run"
+      Slanger::Config.load
       Slanger::Config[:require].each { |f| require f }
-      Thin::Logging.silent = true
 
       create_pid!
-      @websocket_server_signature = Slanger::WebSocketServer.run
-      Slanger.debug "websocket_server_signature: #{@websocket_server_signature}"
+      start_api_server!
+      start_websocket_server!
+    rescue
+      remove_pid!
+    end
 
-      connection_args = {Host: Slanger::Config.api_host, Port: Slanger::Config.api_port}
+    def start_websocket_server!
+      options = map_options_for_websocket_server(Slanger::Config)
+
+      @websocket_server_signature = Slanger::WebSocketServer.run(options)
+
+      Slanger.debug "websocket_server_signature: #{@websocket_server_signature}"
+    end
+
+    def map_options_for_websocket_server(options)
+      opt = {
+        host:    options[:host],
+        port:    options[:websocket_port],
+        debug:   options[:debug],
+        app_key: options[:app_key]
+      }
+
+      if options[:tls_options]
+        opt.merge! secure: true,
+          tls_options: options[:tls_options]
+      end
+
+      opt
+    end
+
+    def start_api_server!
+      Thin::Logging.silent = true
+      connection_args = map_options_for_api_server Slanger::Config
 
       Slanger.info "Starting API server #{connection_args}"
       Rack::Handler::Thin.run Slanger::ApiServer, connection_args
       Slanger.debug "API server started"
-    rescue
-      remove_pid!
+    end
+
+    def map_options_for_api_server(options)
+      {Host: options[:api_host], Port: options[:api_port]}
     end
 
     def stop
