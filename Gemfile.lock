@@ -34,7 +34,7 @@ GEM
     daemons (1.2.2)
     debug_inspector (0.0.2)
     debugger-linecache (1.2.0)
-    diff-lcs (1.1.3)
+    diff-lcs (1.2.5)
     em-hiredis (0.2.1)
       hiredis (~> 0.4.0)
     em-http-request (0.3.0)
@@ -55,7 +55,7 @@ GEM
     metaclass (0.0.4)
     method_source (0.8.2)
     minitest (5.6.1)
-    mocha (0.13.3)
+    mocha (1.1.0)
       metaclass (~> 0.0.1)
     multi_json (1.11.0)
     pretty_backtrace (0.1.2)
@@ -77,14 +77,19 @@ GEM
       rack
     rake (10.4.2)
     redis (3.2.1)
-    rspec (2.12.0)
-      rspec-core (~> 2.12.0)
-      rspec-expectations (~> 2.12.0)
-      rspec-mocks (~> 2.12.0)
-    rspec-core (2.12.2)
-    rspec-expectations (2.12.1)
-      diff-lcs (~> 1.1.3)
-    rspec-mocks (2.12.2)
+    rspec (3.2.0)
+      rspec-core (~> 3.2.0)
+      rspec-expectations (~> 3.2.0)
+      rspec-mocks (~> 3.2.0)
+    rspec-core (3.2.3)
+      rspec-support (~> 3.2.0)
+    rspec-expectations (3.2.1)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.2.0)
+    rspec-mocks (3.2.1)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.2.0)
+    rspec-support (3.2.2)
     safe_yaml (1.0.4)
     signature (0.1.8)
     sinatra (1.4.6)
@@ -111,14 +116,15 @@ PLATFORMS
 DEPENDENCIES
   byebug
   haml (~> 3.1.2)
-  mocha (~> 0.13.2)
+  mocha (~> 1.1.0)
   pretty_backtrace
   pry (~> 0.10.1)
   pry-byebug
   pusher (~> 0.14.2)
   rake
   redis
-  rspec (~> 2.12.0)
+  rspec
+  rspec-mocks
   slanger!
   timecop (~> 0.3.5)
   webmock (~> 1.8.7)

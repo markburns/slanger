@@ -24,7 +24,8 @@ Gem::Specification.new do |s|
   s.add_dependency                'thin',             '~> 1.6.0'
   s.add_dependency                'em-http-request',  '~> 0.3.0'
 
-  s.add_development_dependency    'rspec',            '~> 2.12.0'
+  s.add_development_dependency    'rspec'
+  s.add_development_dependency    'rspec-mocks'
   s.add_development_dependency    'pretty_backtrace'
   s.add_development_dependency    'byebug'
   s.add_development_dependency    'pry-byebug'
@@ -33,7 +34,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency    'rake'
   s.add_development_dependency    'timecop',          '~> 0.3.5'
   s.add_development_dependency    'webmock',          '~> 1.8.7'
-  s.add_development_dependency    'mocha',            '~> 0.13.2'
+  s.add_development_dependency    'mocha',            '~> 1.1.0'
   s.add_development_dependency    'pry',              '~> 0.10.1'
   s.add_development_dependency    'redis'
 
