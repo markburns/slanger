@@ -46,11 +46,11 @@ describe 'Integration' do
             end
           end
 
-          messages.should have_attributes first_event: 'pusher:connection_established', count: 2,
+          expect(messages).to have_attributes first_event: 'pusher:connection_established', count: 2,
             id_present: true
 
           # Channel id should be in the payload
-          messages.last['event'].should == 'pusher:error'
+          expect(messages.last['event']).to eq('pusher:error')
           expect(JSON.parse(messages.last['data'])['message']).to match /^Invalid signature: Expected HMAC SHA256 hex digest of/
         end
       end
@@ -115,8 +115,8 @@ describe 'Integration' do
 
             expect(messages).to have_attributes connection_established: true, count: 3
             # Channel id should be in the payload
-            messages[1].should == {"channel"=>"presence-channel", "event"=>"pusher_internal:subscription_succeeded",
-                                     "data"=>"{\"presence\":{\"count\":1,\"ids\":[\"0f177369a3b71275d25ab1b44db9f95f\"],\"hash\":{\"0f177369a3b71275d25ab1b44db9f95f\":{\"name\":\"SG\"}}}}"}
+            expect(messages[1]).to eq({"channel"=>"presence-channel", "event"=>"pusher_internal:subscription_succeeded",
+                                     "data"=>"{\"presence\":{\"count\":1,\"ids\":[\"0f177369a3b71275d25ab1b44db9f95f\"],\"hash\":{\"0f177369a3b71275d25ab1b44db9f95f\":{\"name\":\"SG\"}}}}"})
 
             expect(messages.last).to eq({"channel"=>"presence-channel", "event"=>"pusher_internal:member_added",
                                      "data"=>{"user_id"=>"37960509766262569d504f02a0ee986d", "user_info"=>{"name"=>"CHROME"}}})
@@ -156,10 +156,10 @@ describe 'Integration' do
 
             # There should only be one set of presence messages sent to the reference user for the second user.
             one_added = messages.one? { |message| message['event'] == 'pusher_internal:member_added'   && message['data']['user_id'] == '37960509766262569d504f02a0ee986d' }
-            expect(one_added).to be_true
+            expect(one_added).to be_truthy
 
             one_removed = messages.one? { |message| message['event'] == 'pusher_internal:member_removed' && message['data']['user_id'] == '37960509766262569d504f02a0ee986d' }
-            expect(one_removed).to be_true
+            expect(one_removed).to be_truthy
           end
         end
       end

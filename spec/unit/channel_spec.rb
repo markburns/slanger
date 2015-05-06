@@ -17,14 +17,14 @@ describe 'Slanger::Channel' do
 
   after(:each) do
     clear_redis_connections
-    EM::Hiredis.unstub(:connect)
+    allow(EM::Hiredis).to receive(:connect).and_call_original
   end
 
   describe '#unsubscribe' do
     it 'decrements channel subscribers on Redis' do
       expect(Slanger::Redis).to receive(:hincrby).
         with('channel_subscriber_count', channel.channel_id, -1).
-        once.and_return mock { expects(:callback).once.yields(2) }
+        once.and_return double { expects(:callback).once.yields(2) }
 
       channel.unsubscribe 1
     end
@@ -36,7 +36,7 @@ describe 'Slanger::Channel' do
 
       expect(Slanger::Redis).to receive(:hincrby).
         with('channel_subscriber_count', channel.channel_id, -1).
-        times(3).and_return mock {
+        times(3).and_return double {
           expects(:callback).times(3).yields(2).then.yields(1).then.yields(0)
         }
 
@@ -48,7 +48,7 @@ describe 'Slanger::Channel' do
     it 'increments channel subscribers on Redis' do
       expect(Slanger::Redis).to receive(:hincrby).
         with('channel_subscriber_count', channel.channel_id, 1).
-        once.and_return mock { expects(:callback).once.yields(2) }
+        once.and_return double { expects(:callback).once.yields(2) }
       channel.subscribe { |m| nil }
     end
 
@@ -59,7 +59,7 @@ describe 'Slanger::Channel' do
 
       expect(Slanger::Redis).to receive(:hincrby).
         with('channel_subscriber_count', channel.channel_id, 1).
-        times(3).and_return mock {
+        times(3).and_return double {
           expects(:callback).times(3).yields(1).then.yields(2).then.yields(3)
         }
 

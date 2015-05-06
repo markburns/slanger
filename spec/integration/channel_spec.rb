@@ -18,7 +18,7 @@ describe 'Integration:' do
         end
      end
 
-      messages.should have_attributes connection_established: true, id_present: true,
+      expect(messages).to have_attributes connection_established: true, id_present: true,
         last_event: 'an_event', last_data: { some: "Mit Raben Und Wölfen" }.to_json
     end
 
@@ -34,7 +34,7 @@ describe 'Integration:' do
         end
      end
 
-      messages.last.should == {"event"=>"pusher:error", "data"=>"{\"code\":null,\"message\":\"Existing subscription to MY_CHANNEL\"}"}
+      expect(messages.last).to eq({"event"=>"pusher:error", "data"=>"{\"code\":null,\"message\":\"Existing subscription to MY_CHANNEL\"}"})
     end
 
     it 'supports unsubscribing to channels without closing the socket' do
@@ -59,7 +59,7 @@ describe 'Integration:' do
         end
       end
 
-      messages.should have_attributes connection_established: true, id_present: true,
+      expect(messages).to have_attributes connection_established: true, id_present: true,
         last_event: 'pusher_internal:subscription_succeeded', count: 2
     end
 
@@ -87,9 +87,9 @@ describe 'Integration:' do
         end
       end
 
-      client1_messages.should have_attributes count: 2
+      expect(client1_messages).to have_attributes count: 2
 
-      client2_messages.should have_attributes last_event: 'an_event',
+      expect(client2_messages).to have_attributes last_event: 'an_event',
                                               last_data: { some: 'data' }.to_json
     end
   end
