@@ -3,26 +3,13 @@ require 'em-websocket'
 
 module Slanger
   module WebSocketServer
-
-
-    def run
+    def run(options)
       EM.epoll
       EM.kqueue
+      Slanger.debug "Websocket server run: #{options}"
 
       EM.run do
-        options = {
-          host:    Slanger::Config[:websocket_host],
-          port:    Slanger::Config[:websocket_port],
-          debug:   Slanger::Config[:debug],
-          app_key: Slanger::Config[:app_key]
-        }
-
-        if Slanger::Config[:tls_options]
-          options.merge! secure: true,
-                         tls_options: Slanger::Config[:tls_options]
-        end
-
-        # Also subscribe the slanger daemon to a Redis channel used for events concerning subscriptions.
+       # Also subscribe the slanger daemon to a Redis channel used for events concerning subscriptions.
         Slanger::Redis.subscribe 'slanger:connection_notification'
 
         EM::WebSocket.start options do |ws|
@@ -47,7 +34,7 @@ module Slanger
       }
 
       ws.onmessage     { |msg|
-        Slanger.info "Websocket onmessage msg: #{msg.inspect}"
+        Slanger.info "Websocket onmessage msg: #{msg}"
         ws.connection_handler.onmessage msg
       }
       ws.onclose       {
