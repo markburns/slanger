@@ -12,13 +12,21 @@ module Slanger
 
     def options
       @options ||= {
-        api_host: '0.0.0.0', api_port: '4567', websocket_host: '0.0.0.0',
-        websocket_port: '8080', debug: false, redis_address: 'redis://0.0.0.0:6379/0',
-        socket_handler: Slanger::Handler, require: [], activity_timeout: 120
+        api_host:       '0.0.0.0',
+        api_port:       '4567',
+        websocket_host: '0.0.0.0',
+        websocket_port: '8080',
+        debug:          false,
+        redis_address:  'redis://0.0.0.0:6379/0',
+        socket_handler: Slanger::Handler,
+        require:        [],
+        activity_timeout: 120
       }
     end
 
     def method_missing(meth, *args, &blk)
+      super unless options.keys.map(&:to_sym).include? meth.to_sym
+
       options[meth]
     end
 
