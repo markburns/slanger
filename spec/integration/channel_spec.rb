@@ -14,7 +14,7 @@ describe 'Integration:' do
         when 2
           Pusher['MY_CHANNEL'].trigger 'an_event', some: "Mit Raben Und Wölfen"
         when 3
-          EM.stop
+            EM.next_tick { EM.stop }
         end
      end
 
@@ -30,7 +30,7 @@ describe 'Integration:' do
         when 2
           websocket.send({ event: 'pusher:subscribe', data: { channel: 'MY_CHANNEL'} }.to_json)
         when 3
-          EM.stop
+            EM.next_tick { EM.stop }
         end
      end
 
@@ -81,7 +81,7 @@ describe 'Integration:' do
               socket_id = client1_messages.first['data']['socket_id']
               Pusher['MY_CHANNEL'].trigger 'an_event', { some: 'data' }, socket_id
             when 3
-              EM.stop
+              EM.next_tick { EM.stop }
             end
           end
         end

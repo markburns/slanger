@@ -21,11 +21,31 @@ module Slanger
 
     %w(info debug warn error).each do |m|
       define_method(m) do |msg|
-        path, line, _ = caller[0].split(":")
-        filename = Pathname.new(path).each_filename.to_a[-3..-1].join "/" rescue ""
-        msg  = "#{filename }:#{line} #{msg}"
-        logger.send(m, msg)
+        stack = get_lines_from caller[0..4]
+
+        if ENV["SLIM_LOG"]
+          msg = "\n#{msg}\n"
+        else
+          msg = "\n#{stack}\n#{msg}\n"
+        end
+        #logger.send(m, msg)
+        puts msg
       end
+
+    end
+
+    def get_lines_from(array)
+      array.map{|l| get_line_summary_from(l)}.join "  "
+    end
+
+    def get_line_summary_from(line)
+      path, line_number, _ = line.split(":")
+      filename = Pathname.new(path).each_filename.to_a[-3..-1].join "/" rescue ""
+      if filename["slanger/spec"]
+        filename.gsub! /\Aslanger\//, ""
+      end
+
+      "#{filename}:#{line_number}"
     end
   end
 end

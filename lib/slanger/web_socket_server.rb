@@ -27,20 +27,23 @@ module Slanger
         if handshake.headers["health-check"]
           ws.health_check = true
         else
-          Slanger.info "Websocket onopen handshake #{handshake}"
+          Slanger.info "Websocket onopen"
           handler = Slanger::Config.socket_handler.new(ws, handshake)
           ws.connection_handler = handler
+          Slanger.info "Websocket onopen complete socket_id: #{handler.socket_id}"
+          puts "="*500
         end
       }
 
       ws.onmessage     { |msg|
-        Slanger.info "Websocket onmessage msg: #{msg}"
+        Slanger.info "Websocket onmessage socket_id: #{ws.connection_handler.socket_id} msg: #{msg}"
         ws.connection_handler.onmessage msg
       }
+
       ws.onclose       {
         #no-op for healthchecks
         unless ws.health_check
-          Slanger.info "Websocket onclose socket_id: #{ws.connection_handler.connection.socket_id}"
+          Slanger.info "Websocket onclose socket_id: #{ws.connection_handler.socket_id}"
           ws.connection_handler.onclose
         end
       }

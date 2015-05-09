@@ -10,9 +10,6 @@ require 'forwardable'
 
 module Slanger
   class Channel
-    extend  Forwardable
-
-    def_delegators :em_channel, :push
     attr_reader :channel_id
 
     class << self
@@ -22,8 +19,8 @@ module Slanger
         klass.all[channel_id] ||= klass.new(channel_id)
       end
 
-      def unsubscribe channel_id, subscription_id
-        from(channel_id).try :unsubscribe, subscription_id
+      def leave channel_id, subscription_id
+        from(channel_id).try :leave, subscription_id
       end
 
       def send_client_message msg
@@ -46,31 +43,42 @@ module Slanger
       @em_channel ||= EM::Channel.new
     end
 
-    def subscribe(*a, &blk)
-      change_subscriber_count __method__, +1, *a, &blk
+    def join(*a, &blk)
+      change_subscriber_count "subscribe", +1, *a, &blk
     end
 
-    def unsubscribe *a, &blk
-      change_subscriber_count __method__, -1, *a, &blk
+    def leave *a, &blk
+      change_subscriber_count "unsubscribe", -1, *a, &blk
     end
 
-    def change_subscriber_count(name, by, *a, &blk)
-      hincrby = Slanger::Redis.hincrby('channel_subscriber_count', channel_id, by)
+    def change_subscriber_count(type, delta, *a, &blk)
+      hincrby = Slanger::Redis.hincrby('channel_subscriber_count', channel_id, delta)
+      subscription_id = nil
 
       hincrby.callback do |value|
-        em_channel.send(name, *a, &blk)
+        subscription_id = em_channel.send(type, *a, &blk)
 
-        name, expected_count =
-          if name.to_sym == :subscribe
-            ["channel_occupied",1]
-          else
-            ["channel_vacated", 0]
-          end
-
-        Slanger::Webhook.post name: name, channel: channel_id if value == expected_count
+        trigger_webhook type, value
       end
+
+      subscription_id
     end
 
+    def trigger_webhook(type, value)
+      webhook_name, trigger_value = webhook_attributes(type.to_sym)
+
+      Slanger::Webhook.post name: webhook_name, channel: channel_id if value == trigger_value
+    end
+
+    def webhook_attributes
+      {:subscribe   => ["channel_occupied",1],
+       :unsubscribe => ["channel_vacated", 0]}
+    end
+
+    def push(msg)
+      Slanger.debug "Pushing message to em_channel: #{channel_id} #{msg}"
+      em_channel.push msg
+    end
 
     # Send a client event to the EventMachine channel.
     # Only events to channels requiring authentication (private or presence)

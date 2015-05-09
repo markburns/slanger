@@ -3,8 +3,19 @@
 require 'spec_helper'
 
 describe 'Integration' do
+  before(:each) { start_slanger { test_setup }}
 
-  before(:each) { start_slanger }
+  let(:test_setup) do
+    allow(Slanger::PresenceChannel::RandomSubscriptionId).to receive(:next).
+      and_return(*ids("subscription"))
+
+    allow(Slanger::Connection::RandomSocketId).to receive(:next).
+      and_return(*ids("socket"))
+  end
+
+  def ids(name, count=29)
+    (1..count).to_a.map{|i| "#{name}-#{i}"}
+  end
 
   describe 'presence channels:' do
     context 'subscribing without channel data' do
@@ -14,8 +25,8 @@ describe 'Integration' do
             case messages.length
             when 1
               websocket.send({ event: 'pusher:subscribe', data: { channel: 'presence-channel', auth: 'bogus' } }.to_json)
-            else
-              EM.stop
+            when 2
+              EM.next_tick { EM.stop }
             end
           end
 
@@ -42,7 +53,7 @@ describe 'Integration' do
                 }
               }.to_json }.to_json)
            else
-              EM.stop
+              EM.next_tick { EM.stop }
             end
           end
 
@@ -64,12 +75,12 @@ describe 'Integration' do
                               user_id: '0f177369a3b71275d25ab1b44db9f95f',
                               name: 'SG',
                               message: messages.first)
-            else
+            when 2
               EM.stop
             end
           end
 
-          expect(messages).to have_attributes connection_established: true, count: 2
+          expect(messages).to have_attributes connection_established: true, count: 3
 
           data = {"presence"=>{"count"=>1,
                                "ids"=>["0f177369a3b71275d25ab1b44db9f95f"],
@@ -86,6 +97,7 @@ describe 'Integration' do
         context 'with more than one subscriber subscribed to the channel' do
           it 'sends a member added message to the existing subscribers' do
             messages  = em_stream do |user1, messages|
+              Slanger.debug "SPEC messages.length: #{messages.length}"
               case messages.length
               when 1
                 send_subscribe(user: user1,
@@ -95,25 +107,25 @@ describe 'Integration' do
                               )
 
               when 2
-                new_websocket.tap do |u|
-                  u.stream do |message|
+                new_websocket.tap do |websocket|
+                  websocket.stream do |message|
                     message = JSON.parse(message)
 
                     if message['event'] == 'pusher:connection_established'
-                      send_subscribe \
-                        user: u, user_id: '37960509766262569d504f02a0ee986d',
-                        name: 'CHROME', message: message
+                      send_subscribe(user: websocket,
+                               user_id: '37960509766262569d504f02a0ee986d',
+                               name: 'CHROME',
+                               message: message
+                              )
                     end
                   end
                 end
-              else
-              byebug
-                EM.stop
+              when 3
+                EM.next_tick { EM.stop }
               end
-
             end
 
-            expect(messages).to have_attributes connection_established: true, count: 3
+            expect(messages).to have_attributes connection_established: true, count: 2
             # Channel id should be in the payload
             expect(messages[1]).to eq({"channel"=>"presence-channel", "event"=>"pusher_internal:subscription_succeeded",
                                      "data"=>"{\"presence\":{\"count\":1,\"ids\":[\"0f177369a3b71275d25ab1b44db9f95f\"],\"hash\":{\"0f177369a3b71275d25ab1b44db9f95f\":{\"name\":\"SG\"}}}}"})
@@ -132,15 +144,9 @@ describe 'Integration' do
                                message: messages.first)
 
               when 2
-                10.times do
+                3.times do
                   new_websocket.tap do |u|
                     u.stream do |message|
-                      # remove stream callback
-                      ## close the connection in the next tick as soon as subscription is acknowledged
-                      u.stream {
-
-                        EM.next_tick { u.close_connection } }
-
                       send_subscribe({ user: u,
                          user_id: '37960509766262569d504f02a0ee986d',
                          name: 'CHROME',
@@ -148,7 +154,6 @@ describe 'Integration' do
                     end
                   end
                 end
-              when 4
                 EM.next_tick { EM.stop }
               end
 

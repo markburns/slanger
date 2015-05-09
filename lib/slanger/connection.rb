@@ -10,7 +10,9 @@ module Slanger
       msg = JSON.parse m
       s = msg.delete 'socket_id'
 
-      unless s == socket_id
+      if s == socket_id
+        Slanger.debug "Not sending message #{msg} to same socket_id: #{socket_id}"
+      else
         Slanger.info "Sending message #{msg}"
         socket.send msg.to_json
       end
@@ -32,13 +34,15 @@ module Slanger
       end
     end
 
-    def establish
+    def acknowledge_established
       @socket_id = RandomSocketId.next
+      Slanger.info "Acknowledging connection established socket_id: #{@socket_id}"
 
       send_payload nil, 'pusher:connection_established', {
         socket_id: @socket_id,
         activity_timeout: Slanger::Config.activity_timeout
       }
+      @socket_id
     end
 
     class RandomSocketId

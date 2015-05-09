@@ -8,10 +8,6 @@ module Slanger
   module Service
     attr_reader :websocket_server_signature
 
-    def node_id
-      @node_id ||= Slanger::Redis.hincrby "next-server"
-    end
-
     def run
       Slanger.debug "Slanger::Service.run"
       Slanger::Config.load

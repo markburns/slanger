@@ -9,25 +9,29 @@ module Slanger
         })
       end
 
-      channel.subscribe(@msg, callback) { |m| send_message m }
+      subscription_id = channel.join(@msg, callback)
+    end
+    private
+
+    def callback
+      Proc.new do
+        Slanger.debug "PresenceSubscription completed, send pusher_internal:subscription_succeeded"
+
+        connection.send_payload(
+          channel_id,
+          'pusher_internal:subscription_succeeded',
+          channel.summary_info
+        )
+
+        #send_message msg
+
+        Slanger.debug "#{self.class} subscribed socket_id: #{socket_id} to channel_id: #{channel_id}"
+      end
     end
 
-    private
 
     def channel_data?
       @msg['data']['channel_data']
-    end
-
-    def callback
-      Proc.new {
-        connection.send_payload(channel_id, 'pusher_internal:subscription_succeeded', {
-          presence: {
-            count: channel.subscribers.size,
-            ids:   channel.ids,
-            hash:  channel.subscribers
-          }
-        })
-      }
     end
   end
 end

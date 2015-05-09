@@ -13,7 +13,7 @@ describe 'Integration' do
           when 1
             private_channel websocket, messages.first
           else
-            EM.stop
+            EM.next_tick { EM.stop }
           end
         end
 
@@ -33,7 +33,7 @@ describe 'Integration' do
                              data: { channel: 'private-channel',
                                      auth: 'bogus' } }.to_json)
           else
-            EM.stop
+            EM.next_tick { EM.stop }
           end
         end
 

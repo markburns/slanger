@@ -3,7 +3,7 @@ require 'em-http-request'
 
 module Slanger
   module Webhook
-    def post payload
+    def self.post payload
       return unless Slanger::Config.webhook_url
 
       payload = {
@@ -22,7 +22,5 @@ module Slanger
         })
         # TODO: Exponentially backed off retries for errors
     end
-
-    extend self
   end
 end

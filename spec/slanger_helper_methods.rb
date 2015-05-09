@@ -79,10 +79,10 @@ module SlangerHelperMethods
   end
 
   def new_websocket opts = {}
-    Slanger.debug "SPEC Create new websocket #{opts}"
     opts = { key: Pusher.key, protocol: 7 }.update opts
     uri = "ws://0.0.0.0:8080/app/#{opts[:key]}?client=js&version=1.8.5&protocol=#{opts[:protocol]}"
 
+    Slanger.debug "SPEC Create new websocket #{uri}"
     ws = EM::HttpRequest.new(uri).get :keepalive => true
     ws.stream{ |msg|
       Slanger.error "SPEC Default stream output: #{msg}"
@@ -107,16 +107,16 @@ module SlangerHelperMethods
   end
 
   def em_thread
-    Thread.new do
+      # do something and raise exception
       EM.run do
         yield
       end
-    end.join
+
   end
 
   def stream websocket, messages
     websocket.stream do |message|
-      Slanger.debug "SPEC stream received #{message}"
+      Slanger.debug "SPEC message received #{message}"
       messages << JSON.parse(message)
 
       yield message
@@ -124,8 +124,6 @@ module SlangerHelperMethods
   end
 
   def send_subscribe options
-    Slanger.debug "SPEC #{__method__} #{options}"
-
     info      = { user_id: options[:user_id], user_info: { name: options[:name] } }
     socket_id = JSON.parse(options[:message]['data'])['socket_id']
     websocket = options[:user]
@@ -135,7 +133,6 @@ module SlangerHelperMethods
 
 
   def subscribe_to_presence_channel websocket, user_info, socket_id
-    Slanger.debug "SPEC #{__method__} #{[websocket, user_info, socket_id]}"
 
     digest = OpenSSL::Digest::SHA256.new
     to_sign   = [socket_id, 'presence-channel', user_info.to_json].join ':'

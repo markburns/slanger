@@ -11,10 +11,9 @@ module Slanger
   class Handler
 
     attr_accessor :connection
-    delegate :error, :send_payload, to: :connection
+    delegate :error, :send_payload, :socket_id, to: :connection
 
     def initialize(socket, handshake)
-      Slanger.debug "Create new handler #{socket} #{handshake}"
       @socket        = socket
       @handshake     = handshake
       @connection    = Connection.new(@socket)
@@ -41,18 +40,20 @@ module Slanger
     rescue JSON::ParserError
       error({ code: 5001, message: "Invalid JSON" })
     rescue Exception => e
-      error({ code: 500, message: "#{e.message}\n #{e.backtrace.join "\n"}" })
+      error({ code: 500, message: "#{e.message}\n #{e.backtrace.join "\n "}" })
     end
 
     def onclose
+      Slanger.debug "onclose unsubscribing subscriptions: #{@subscriptions}"
+
       @subscriptions.select { |k,v| k && v }.
         each do |channel_id, subscription_id|
-          Channel.unsubscribe channel_id, subscription_id
+          Channel.leave channel_id, subscription_id
         end
     end
 
     def authenticate
-      Slanger.debug "authenticate app_key: #{app_key}"
+      Slanger.debug "authenticate app_key: #{app_key} #{socket_id}"
 
       if !valid_app_key? app_key
         error({ code: 4001, message: "Could not find app by key #{app_key}" })
@@ -61,8 +62,8 @@ module Slanger
         error({ code: 4007, message: "Unsupported protocol version" })
         @socket.close_websocket
       else
-        Slanger.info "Authenticate successful"
-        return connection.establish
+        connection.acknowledge_established
+        Slanger.info "Authenticate successful socket_id: #{socket_id}"
       end
     end
 
@@ -77,22 +78,31 @@ module Slanger
     def pusher_pong msg; end
 
     def pusher_subscribe(msg)
+      Slanger.debug "#{__method__} #{msg}"
+      Slanger.debug "Existing subscriptions: #{@subscriptions}"
       channel_id = msg['data']['channel']
       klass      = subscription_klass channel_id
 
       if @subscriptions[channel_id]
         error({ code: nil, message: "Existing subscription to #{channel_id}" })
       else
+        Slanger.debug "Creating new subscription socket_id: #{socket_id} channel_id: #{channel_id} type: #{klass}"
         subscription = klass.new(connection.socket, connection.socket_id, msg)
-        @subscriptions[channel_id] = subscription.subscribe
+        subscription_id = subscription.subscribe
+        Slanger.debug "Subscribed socket_id: #{socket_id} to channel_id: #{channel_id} subscription_id: #{subscription_id}"
+        @subscriptions[channel_id] = subscription_id
       end
     end
 
     def pusher_unsubscribe(msg)
+      Slanger.debug "#{__method__} #{msg}"
+      Slanger.debug "Existing subscriptions: #{@subscriptions}"
+
       channel_id      = msg['data']['channel']
       subscription_id = @subscriptions.delete(channel_id)
+      Slanger.debug "Deleting subscription socket_id: #{socket_id} channel_id: #{channel_id} subscription_id: #{subscription_id}"
 
-      Channel.unsubscribe channel_id, subscription_id
+      Channel.leave channel_id, subscription_id
     end
 
     private

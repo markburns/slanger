@@ -36,25 +36,44 @@ RSpec.configure do |config|
   config.order = 'random'
   config.include SlangerHelperMethods
   config.fail_fast = false
-  config.after(:each) { stop_slanger if server_pids.any? }
   config.raise_errors_for_deprecations!
-  config.around(:each) {|e| 
-    if ENV["SKIP_TIMEOUT"]
-      e.run 
-    else
-      Timeout.timeout 1 do
-        e.run
+
+  config.around(:each) {|e|
+    begin
+      redis = Redis.new
+
+      redis.keys("*").each do |k|
+        Slanger.debug "deleting #{k}"
+        redis.del k
       end
+
+      Slanger::Channel.instance_eval { @all = nil}
+      Slanger::PresenceChannel.instance_eval { @all = nil}
+
+      Slanger::Redis.instance_eval do
+        @regular_connection = nil
+        @publisher = nil
+        @subscriber = nil
+      end
+
+      Slanger::Service.instance_eval do
+        @websocket_server_signature = nil
+      end
+
+      Slanger.debug "*****************************"
+      Slanger.debug e.full_description
+      Slanger.debug "*****************************"
+
+      e.run
+
+
+    ensure
+      stop_slanger if server_pids.any?
     end
 
   }
   config.before :all do
-    redis = Redis.new
 
-    redis.keys("*").each do |k|
-      Slanger.debug "deleting #{k}"
-      redis.del k
-    end
 
     Pusher.tap do |p|
       p.host   = '0.0.0.0'

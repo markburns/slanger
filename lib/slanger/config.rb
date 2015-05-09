@@ -25,7 +25,6 @@ module Slanger
     end
 
     def method_missing(meth, *args, &blk)
-      super unless options.keys.map(&:to_sym).include? meth.to_sym
 
       options[meth]
     end
