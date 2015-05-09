@@ -65,7 +65,7 @@ module Slanger
     end
 
     def trigger_webhook(type, value)
-      webhook_name, trigger_value = webhook_attributes(type.to_sym)
+      webhook_name, trigger_value = webhook_attributes[type.to_sym]
 
       Slanger::Webhook.post name: webhook_name, channel: channel_id if value == trigger_value
     end

@@ -49,7 +49,7 @@ describe 'Slanger::Channel' do
     let(:hincrby_results) { [2] }
     context 'decrements channel subscribers on Redis' do
       it do
-        channel.unsubscribe 1
+        channel.leave 1
       end
     end
 
@@ -61,7 +61,7 @@ describe 'Slanger::Channel' do
       let(:hincrby_results) { [2,1,0] }
 
       it do
-        3.times { |i| channel.unsubscribe i + 1 }
+        3.times { |i| channel.leave i + 1 }
       end
     end
   end
@@ -74,7 +74,7 @@ describe 'Slanger::Channel' do
       let(:hincrby_results) { [1] }
 
       it do
-        channel.subscribe { |m| nil }
+        channel.join { |m| nil }
       end
     end
 
@@ -86,7 +86,7 @@ describe 'Slanger::Channel' do
       let(:hincrby_results) { [1, 2, 3] }
 
       it do
-        3.times { channel.subscribe { |m| nil } }
+        3.times { channel.join { |m| nil } }
       end
     end
   end
