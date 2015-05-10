@@ -8,6 +8,11 @@ module Slanger
         errback(&removal_error(key))
     end
 
+    def remove_internal(key)
+      @internal_roster.delete key
+    end
+
+
     private
 
     def removal_success(key, &blk)

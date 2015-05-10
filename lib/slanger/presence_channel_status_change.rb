@@ -35,7 +35,7 @@ module Slanger
       else
         # Don't tell the channel subscriptions the member has been removed if the subscriber data
         # still remains in the roster hash, e.g. multiple browser windows open.
-        member = roster.delete message['subscription_id']
+        member = roster.remove_internal message['subscription_id']
         if member && !roster.present?(member)
           push payload('pusher_internal:member_removed', { user_id: member['user_id'] })
         end
