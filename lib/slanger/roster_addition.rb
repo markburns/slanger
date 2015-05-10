@@ -8,11 +8,17 @@ module Slanger
         errback(&addition_error(key, value))
     end
 
+    def add_internal(key, value)
+      with_roster do |r|
+        r[key] = value
+      end
+    end
+
     private
 
     def addition_success(key, value, on_add_callback)
       Proc.new do |res|
-        @internal_roster[key] = value
+        add_internal key, value
         Slanger.debug "roster_add successful channel_id: #{channel_id} key: #{key}, value: #{value} internal_roster: #{@internal_roster}"
         on_add_callback.call
       end

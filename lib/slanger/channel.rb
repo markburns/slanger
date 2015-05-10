@@ -45,6 +45,7 @@ module Slanger
 
     def join(*a, &blk)
       change_subscriber_count "subscribe", +1, *a, &blk
+      SecureRandom.uuid
     end
 
     def leave *a, &blk
@@ -53,15 +54,12 @@ module Slanger
 
     def change_subscriber_count(type, delta, *a, &blk)
       hincrby = Slanger::Redis.hincrby('channel_subscriber_count', channel_id, delta)
-      subscription_id = nil
 
       hincrby.callback do |value|
-        subscription_id = em_channel.send(type, *a, &blk)
+        em_channel.send(type, *a, &blk)
 
         trigger_webhook type, value
       end
-
-      subscription_id
     end
 
     def trigger_webhook(type, value)

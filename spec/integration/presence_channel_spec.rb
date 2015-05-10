@@ -154,17 +154,17 @@ describe 'Integration' do
                     end
                   end
                 end
+              when 3
                 EM.next_tick { EM.stop }
               end
 
             end
 
             # There should only be one set of presence messages sent to the reference user for the second user.
-            one_added = messages.one? { |message| message['event'] == 'pusher_internal:member_added'   && message['data']['user_id'] == '37960509766262569d504f02a0ee986d' }
-            expect(one_added).to be_truthy
-
-            one_removed = messages.one? { |message| message['event'] == 'pusher_internal:member_removed' && message['data']['user_id'] == '37960509766262569d504f02a0ee986d' }
-            expect(one_removed).to be_truthy
+            added   = messages.select {|m| m['event'] == 'pusher_internal:member_added'   && m['data']['user_id'] == '37960509766262569d504f02a0ee986d' }
+            removed = messages.select {|m| m['event'] == 'pusher_internal:member_removed' && m['data']['user_id'] == '37960509766262569d504f02a0ee986d' }
+            expect(added.length).to eq 1
+            expect(removed.length).to eq 1
           end
         end
       end

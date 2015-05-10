@@ -47,11 +47,13 @@ module Slanger
     end
 
     def summary_info
-      {presence: {
-        count: subscribers.size,
-        ids:   ids,
-        hash:  subscribers
-      }}
+      roster.summary do |count, ids, subscribers|
+        {presence: {
+          count: count,
+          ids:   ids,
+          hash:  subscribers
+        }}
+      end
     end
   end
 end

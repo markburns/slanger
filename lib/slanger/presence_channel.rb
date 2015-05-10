@@ -15,13 +15,9 @@ module Slanger
     include PresenceChannelLeaving
     include PresenceChannelStatusChange
 
-    extend  Forwardable
-    def_delegators :roster, :ids, :subscribers
+    def initialize(*args)
+      super *args
 
-    def initialize(channel_id)
-      super channel_id
-
-      roster.fetch
     end
 
     # Send an event received from Redis to the EventMachine channel
@@ -47,7 +43,17 @@ module Slanger
     private
 
     def roster
-      @roster ||= Roster.new channel_id
+      @roster ||= load_roster
+    end
+
+    def load_roster
+      roster = Roster.new(channel_id)
+
+      Fiber.new do
+        roster.fetch
+      end.resume
+
+      roster
     end
 
   end

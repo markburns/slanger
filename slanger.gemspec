@@ -37,6 +37,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency    'mocha',            '~> 1.1.0'
   s.add_development_dependency    'pry',              '~> 0.10.1'
   s.add_development_dependency    'redis'
+  s.add_development_dependency    'em-spec'
 
   s.files                       = Dir['README.md', 'lib/**/*', 'slanger.rb']
   s.require_path                = '.'
