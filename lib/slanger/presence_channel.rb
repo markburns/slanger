@@ -18,6 +18,7 @@ module Slanger
     def initialize(*args)
       super *args
 
+      roster
     end
 
     # Send an event received from Redis to the EventMachine channel
@@ -43,17 +44,7 @@ module Slanger
     private
 
     def roster
-      @roster ||= load_roster
-    end
-
-    def load_roster
-      roster = Roster.new(channel_id)
-
-      Fiber.new do
-        roster.fetch
-      end.resume
-
-      roster
+      @roster ||= Roster.new(channel_id)
     end
 
   end

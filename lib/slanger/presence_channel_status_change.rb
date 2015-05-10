@@ -25,7 +25,6 @@ module Slanger
         member = message['channel_data']
         # Don't tell the channel subscribers a new member has been added if the subscriber data
         # is already present in the roster hash, e.g. multiple browser windows open.
-        byebug
         if roster.present?(member)
           Slanger.debug "member already present in roster not sending pusher_internal:member_added"
         else

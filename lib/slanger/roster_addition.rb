@@ -9,9 +9,7 @@ module Slanger
     end
 
     def add_internal(key, value)
-      with_roster do |r|
-        r[key] = value
-      end
+      @internal_roster[key] = value
     end
 
     private

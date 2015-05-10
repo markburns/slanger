@@ -17,7 +17,7 @@ module Slanger
       Proc.new do
         Slanger.debug "PresenceSubscription completed, send pusher_internal:subscription_succeeded"
 
-        Fiber.neww do
+        Fiber.new do
           connection.send_payload(
             channel_id,
             'pusher_internal:subscription_succeeded',

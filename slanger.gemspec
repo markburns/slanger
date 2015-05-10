@@ -15,6 +15,7 @@ Gem::Specification.new do |s|
 
   s.add_dependency                'eventmachine',     '~> 1.0.0'
   s.add_dependency                'em-hiredis',       '~> 0.2.0'
+  s.add_dependency                'redis'
   s.add_dependency                'em-websocket',     '~> 0.5.1'
   s.add_dependency                'rack',             '~> 1.4.5'
   s.add_dependency                'rack-fiber_pool',  '~> 0.9.2'
@@ -36,7 +37,6 @@ Gem::Specification.new do |s|
   s.add_development_dependency    'webmock'
   s.add_development_dependency    'mocha',            '~> 1.1.0'
   s.add_development_dependency    'pry',              '~> 0.10.1'
-  s.add_development_dependency    'redis'
   s.add_development_dependency    'em-spec'
 
   s.files                       = Dir['README.md', 'lib/**/*', 'slanger.rb']

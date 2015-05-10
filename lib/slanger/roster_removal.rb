@@ -12,11 +12,9 @@ module Slanger
 
     def removal_success(key, &blk)
       Proc.new do
-        with_roster do |r|
-          r.delete key
-          Slanger.debug "roster_remove successful channel_id: #{channel_id} key: #{key} internal_roster: #{@internal_roster}"
-          blk.call
-        end
+        @internal_roster.delete key
+        Slanger.debug "roster_remove successful channel_id: #{channel_id} key: #{key} internal_roster: #{@internal_roster}"
+        blk.call
       end
     end
 
