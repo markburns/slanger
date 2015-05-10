@@ -121,11 +121,15 @@ module Slanger
     end
 
     def subscription_klass channel_id
-      klass = channel_id.match(/^(private|presence)-/) do |match|
-        Slanger.const_get "#{match[1]}_subscription".classify
+      klass = case channel_id
+      when /private-/
+        Slanger::PrivateSubscription
+      when /presence-/
+        Slanger::Presence::Subscription
+      else
+        Slanger::Subscription
       end
 
-      klass || Slanger::Subscription
     end
   end
 end

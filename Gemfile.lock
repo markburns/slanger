@@ -25,6 +25,8 @@ GEM
       tzinfo (~> 1.1)
     addressable (2.3.8)
     bacon (1.2.0)
+    binding_of_caller (0.7.2)
+      debug_inspector (>= 0.0.1)
     byebug (3.5.1)
       columnize (~> 0.8)
       debugger-linecache (~> 1.2)
@@ -124,6 +126,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  binding_of_caller
   byebug
   em-spec
   haml (~> 3.1.2)

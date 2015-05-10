@@ -5,10 +5,10 @@ module SlangerHelperMethods
       @attributes = attributes
     end
 
-    CHECKS = %w(first_event last_event last_data )
+    CHECKS = %w(first_event last_event last_data count)
 
     def matches?(messages)
-      @messages = messages
+      @messages = messages.dup.map{|a| m = a.dup; m["data"] = JSON.parse(m["data"]) if m["data"]; m}
       @failures = []
 
       check_connection_established if attributes[:connection_established]
@@ -24,7 +24,7 @@ module SlangerHelperMethods
     end
 
     def failure_message
-      @failures.map {|f| "expected #{f}: to equal #{attributes[f]} but got #{send(f)}"}.join "\n"
+      @failures.map {|f| "expected #{f}: to equal #{attributes[f.to_sym]} but got #{send(f)}\n messages: #{messages}"}.join "\n"
     end
 
     private

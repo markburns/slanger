@@ -25,11 +25,15 @@ module Slanger
 
         if ENV["SLIM_LOG"]
           msg = "\n#{msg}\n"
+          puts msg
+
         else
           msg = "\n#{stack}\n#{msg}\n"
+          klass = binding.of_caller(1).eval('self.class')
+          meth  = binding.of_caller(1).eval('__method__')
+          msg = "#{klass}##{meth}#{msg}"
+          logger.send(m, msg)
         end
-        #logger.send(m, msg)
-        puts msg
       end
 
     end

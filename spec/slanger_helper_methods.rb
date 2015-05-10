@@ -107,16 +107,15 @@ module SlangerHelperMethods
   end
 
   def em_thread
-      # do something and raise exception
-      EM.run do
-        yield
-      end
-
+    EM.run do
+      yield
+    end
   end
 
-  def stream websocket, messages
+  def stream websocket, messages, websocket_name=nil
     websocket.stream do |message|
-      Slanger.debug "SPEC message received #{message}"
+      Slanger.debug "SPEC #{websocket_name} messages: #{messages}"
+      Slanger.debug "SPEC #{websocket_name} message received #{message}"
       messages << JSON.parse(message)
 
       yield message

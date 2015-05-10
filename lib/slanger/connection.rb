@@ -6,14 +6,15 @@ module Slanger
       @socket, @socket_id = socket, socket_id
     end
 
-    def send_message m
-      msg = JSON.parse m
+    def send_message(m)
+      msg = m.is_a?(String) ?  JSON.parse(m) : m
+
       s = msg.delete 'socket_id'
 
       if s == socket_id
         Slanger.debug "Not sending message #{msg} to same socket_id: #{socket_id}"
       else
-        Slanger.info "Sending message #{msg}"
+        Slanger.info "Sending message to websocket: #{socket_id} #{msg}"
         socket.send msg.to_json
       end
     end

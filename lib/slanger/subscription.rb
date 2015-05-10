@@ -1,5 +1,7 @@
 module Slanger
   class Subscription
+    DIGEST = OpenSSL::Digest::SHA256.new
+
     attr_accessor :connection, :socket
     delegate :send_payload, :send_message, :error, :socket_id, to: :connection
 
@@ -9,7 +11,11 @@ module Slanger
     end
 
     def subscribe
-      subscription_id = channel.join { |m| send_message m }
+      raise NotImplementedError
+
+      subscription_id = channel.join { |m|
+        send_message m
+      }
       Slanger.debug "#{self.class} subscribed socket_id: #{socket_id} to channel_id: #{channel_id} subscription_id: #{subscription_id}"
 
       send_payload channel_id, 'pusher_internal:subscription_succeeded'
@@ -30,8 +36,7 @@ module Slanger
     def token(channel_id, params=nil)
       to_sign = [socket_id, channel_id, params].compact.join ':'
 
-      digest = OpenSSL::Digest::SHA256.new
-      OpenSSL::HMAC.hexdigest digest, Slanger::Config.secret, to_sign
+      OpenSSL::HMAC.hexdigest DIGEST, Slanger::Config.secret, to_sign
     end
 
     def invalid_signature?

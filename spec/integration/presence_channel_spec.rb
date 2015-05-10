@@ -6,7 +6,7 @@ describe 'Integration' do
   before(:each) { start_slanger { test_setup }}
 
   let(:test_setup) do
-    allow(Slanger::PresenceChannel::RandomSubscriptionId).to receive(:next).
+    allow(Slanger::Presence::Channel::RandomSubscriptionId).to receive(:next).
       and_return(*ids("subscription"))
 
     allow(Slanger::Connection::RandomSocketId).to receive(:next).
@@ -30,7 +30,9 @@ describe 'Integration' do
             end
           end
 
-          expect(messages).to have_attributes connection_established: true, id_present: true,
+          expect(messages).to have_attributes \
+            connection_established: true,
+            id_present: true,
             count: 2,
             last_event: 'pusher:error'
 
@@ -80,7 +82,7 @@ describe 'Integration' do
             end
           end
 
-          expect(messages).to have_attributes connection_established: true, count: 3
+          expect(messages).to have_attributes connection_established: true, count: 2
 
           data = {"presence"=>{"count"=>1,
                                "ids"=>["0f177369a3b71275d25ab1b44db9f95f"],
@@ -91,47 +93,72 @@ describe 'Integration' do
                                    "data"   => data.to_json})
         end
 
-
-
-
         context 'with more than one subscriber subscribed to the channel' do
           it 'sends a member added message to the existing subscribers' do
-            messages  = em_stream do |user1, messages|
-              Slanger.debug "SPEC messages.length: #{messages.length}"
-              case messages.length
-              when 1
-                send_subscribe(user: user1,
-                               user_id: '0f177369a3b71275d25ab1b44db9f95f',
-                               name: 'SG',
-                               message: messages.first
-                              )
+            client1_messages, client2_messages  = [], []
 
-              when 2
-                new_websocket.tap do |websocket|
-                  websocket.stream do |message|
-                    message = JSON.parse(message)
+            em_thread do
+              client1, client2 = new_websocket, new_websocket
+              client2_messages, client1_messages = [], []
 
-                    if message['event'] == 'pusher:connection_established'
-                      send_subscribe(user: websocket,
-                               user_id: '37960509766262569d504f02a0ee986d',
-                               name: 'CHROME',
-                               message: message
-                              )
+              timer_added = false
+              stream(client1, client1_messages, "Client 1") do |message|
+                Slanger.error "client1_messages.length #{client1_messages.length}"
+                case client1_messages.length
+                when 1
+                  send_subscribe(user: client1,
+                                 user_id: '0f177369a3b71275d25ab1b44db9f95f',
+                                 name: 'SG',
+                                 message: client1_messages.first
+                                )
+                else
+                  unless timer_added
+                    EventMachine::PeriodicTimer.new(0.01) do
+                      timer_added=true
+
+                      if client2_messages.length == 2
+                        EM.stop 
+                      end
                     end
                   end
                 end
-              when 3
-                EM.next_tick { EM.stop }
+              end
+
+              stream(client2, client2_messages, "Client 2") do
+                Slanger.error "client2_messages: #{client2_messages}"
+                Slanger.error "client2_messages.length #{client2_messages.length}"
+
+                unless @sent_subscribe
+                  timer = EventMachine::PeriodicTimer.new(0.01) do
+                    message = client1_messages.find{|m| m["event"] == "pusher_internal:subscription_succeeded" }
+
+                    if message && !@sent
+                      @sent = true
+                      send_subscribe(
+                        user: client2,
+                        user_id: '37960509766262569d504f02a0ee986d',
+                        name: 'CHROME',
+                        message: client2_messages.first
+                      )
+                      Slanger.error "SPEC sent subscribe"
+                      timer.cancel
+                    end
+                  end
+                  @sent_subscribe = true
+                end
               end
             end
 
-            expect(messages).to have_attributes connection_established: true, count: 2
+            expect(client1_messages).to have_attributes connection_established: true, count: 2
             # Channel id should be in the payload
-            expect(messages[1]).to eq({"channel"=>"presence-channel", "event"=>"pusher_internal:subscription_succeeded",
-                                     "data"=>"{\"presence\":{\"count\":1,\"ids\":[\"0f177369a3b71275d25ab1b44db9f95f\"],\"hash\":{\"0f177369a3b71275d25ab1b44db9f95f\":{\"name\":\"SG\"}}}}"})
+            #data = {presence: {"count"=>2, "ids"=>["0f177369a3b71275d25ab1b44db9f95f", "37960509766262569d504f02a0ee986d"], "hash"=>{"0f177369a3b71275d25ab1b44db9f95f"=>{"name"=>"SG"}, "37960509766262569d504f02a0ee986d"=>{"name"=>"CHROME"}}}}
+            data = {presence: {"count"=>1, "ids"=>["0f177369a3b71275d25ab1b44db9f95f"], "hash"=>{"0f177369a3b71275d25ab1b44db9f95f"=>{"name"=>"SG"}}}}
 
-            expect(messages.last).to eq({"channel"=>"presence-channel", "event"=>"pusher_internal:member_added",
-                                     "data"=>{"user_id"=>"37960509766262569d504f02a0ee986d", "user_info"=>{"name"=>"CHROME"}}})
+            expect(client1_messages[1]).to eq({"channel"=>"presence-channel", "event"=>"pusher_internal:subscription_succeeded",
+                                               "data"=>data.to_json})
+
+            expect(client1_messages[0]).to eq({"channel"=>"presence-channel", "event"=>"pusher_internal:member_added",
+                                               "data"=>{"user_id"=>"37960509766262569d504f02a0ee986d", "user_info"=>{"name"=>"CHROME"}}})
           end
 
           it 'does not send multiple member added and member removed messages if one subscriber opens multiple connections, i.e. multiple browser tabs.' do
@@ -148,9 +175,9 @@ describe 'Integration' do
                   new_websocket.tap do |u|
                     u.stream do |message|
                       send_subscribe({ user: u,
-                         user_id: '37960509766262569d504f02a0ee986d',
-                         name: 'CHROME',
-                         message: JSON.parse(message)})
+                                       user_id: '37960509766262569d504f02a0ee986d',
+                                       name: 'CHROME',
+                                       message: JSON.parse(message)})
                     end
                   end
                 end

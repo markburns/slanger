@@ -14,7 +14,7 @@ module Slanger
 
     class << self
       def from channel_id
-        klass = channel_id[/^presence-/] ? PresenceChannel : Channel
+        klass = channel_id[/^presence-/] ? Presence::Channel : Channel
 
         klass.all[channel_id] ||= klass.new(channel_id)
       end
@@ -24,7 +24,12 @@ module Slanger
       end
 
       def send_client_message msg
-        from(msg['channel']).try :send_client_message, msg
+        channel = from(msg['channel'])
+        if channel
+          channel.send_client_message msg
+        else
+          Slamger.error "#{__method__} Channel not found for send message: #{msg}"
+        end
       end
 
       protected
@@ -82,13 +87,21 @@ module Slanger
     # Only events to channels requiring authentication (private or presence)
     # are accepted. Public channels only get events from the API.
     def send_client_message(message)
-      Slanger::Redis.publish(message['channel'], message.to_json) if authenticated?
+      if authenticated?
+        Slanger.debug "#{__method__} publish to redis: #{messsage}"
+        Slanger::Redis.publish(message['channel'], message.to_json) 
+      end
     end
 
     # Send an event received from Redis to the EventMachine channel
     # which will send it to subscribed clients.
     def dispatch(message, channel_id)
-      push(message.to_json) unless channel_id =~ /^slanger:/
+      if channel_id =~ /^slanger:/
+        Slanger.debug "Channel#dispatch: Push message to em_channel channel_id: #{channel_id} message: #{message}"
+        push(message.to_json) 
+      else
+        Slanger.debug "Not dispatching slanger message for channel_id: #{channel_id} message: #{message}"
+      end
     end
 
     def authenticated?

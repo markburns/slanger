@@ -24,6 +24,8 @@ Slanger::Logger
 
 require "byebug"
 require "pry-byebug"
+require 'binding_of_caller'
+
 
 #require 'pretty_backtrace'
 #PrettyBacktrace.enable
@@ -48,7 +50,7 @@ RSpec.configure do |config|
       end
 
       Slanger::Channel.instance_eval { @all = nil}
-      Slanger::PresenceChannel.instance_eval { @all = nil}
+      Slanger::Presence::Channel.instance_eval { @all = nil}
 
       Slanger::Redis.instance_eval do
         @regular_connection = nil

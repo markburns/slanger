@@ -26,6 +26,7 @@ Gem::Specification.new do |s|
   s.add_dependency                'em-http-request',  '~> 0.3.0'
 
   s.add_development_dependency    'rspec'
+  s.add_development_dependency    'binding_of_caller'
   s.add_development_dependency    'rspec-mocks'
   s.add_development_dependency    'pretty_backtrace'
   s.add_development_dependency    'byebug'
