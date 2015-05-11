@@ -1,1 +1,0 @@
-ps ux | grep ruby | grep -v grep |grep -v kill-ruby | cut -f2 -d\s | col | cut -f1 | xargs kill -9
