@@ -26,7 +26,7 @@ module Slanger
       end
 
       def subscribers
-        Hash[@internal_roster.values.map { |v| [v['user_id'], v['user_info']] }]
+        Hash[@internal_roster.keys.map { |v| [v['user_id'], v['user_info']] }]
       end
 
       def redis_to_hash(array)
