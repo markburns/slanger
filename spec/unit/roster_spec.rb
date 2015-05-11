@@ -10,22 +10,22 @@ describe 'Slanger::Roster' do
     expect(result).to eq({1 => 2,"a"  => {}})
   end
 
-  it do
-    user_1 = {"user_id" => "1", "user_info" => {}}
-
-    expected = {
-      user_1 => {
-        "node:1" => ["subscription:abc"],
-        "node:2" => ["subscription:def"]
-      }
-    }
-
+  before do
     expect(Slanger::Redis).to receive(:hgetall_sync).
       with("presence-channel").
       and_return([
-        "{\"user_id\"=>\"1\", \"user_info\"=>{}}",
-        "{\"node:1\"=>[\"subscription:abc\"], \"node:2\"=>[\"subscription:def\"]}"
+        user_1.to_s,
+        subscriptions.to_s
       ])
+  end
+
+  let(:user_1) { {"user_id" => "1", "user_info" => {}} }
+  let(:subscriptions) do
+    { "node:1" => ["subscription:abc"],
+      "node:2" => ["subscription:def"] } 
+  end
+  it do
+    expected = {user_1 => subscriptions}
 
     expect(roster.internal_roster).to eq expected
   end
