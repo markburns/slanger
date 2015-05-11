@@ -11,7 +11,7 @@ module Slanger
 
   module Service
     class << self
-      attr_reader :websocket_server_signature, :node_id
+      attr_reader :websocket_server_signature
 
       def run
         Slanger.debug "Slanger::Service.run"
@@ -22,12 +22,29 @@ module Slanger
         fetch_node_id!
         start_api_server!
         start_websocket_server!
+        set_online_status!
       rescue
         remove_pid!
       end
 
+      def node_id
+        @node_id ||= fetch_node_id!
+      end
+
       def fetch_node_id!
-        @node_id ||= Slanger::Redis.hincrby("node", "next_id")
+        @node_id ||= fetch_node_id
+      end
+
+      def present_node_ids
+        Slanger::Redis.sync_redis_connection.smembers("slanger-online-node-ids")
+      end
+
+      def set_online_status!
+        Slanger::Redis.sync_redis_connection.sadd("slanger-online-node-ids", node_id)
+      end
+
+      def fetch_node_id
+        Slanger::Redis.sync_redis_connection.hincrby("slanger-node", "next-id", 1)
       end
 
       def start_websocket_server!

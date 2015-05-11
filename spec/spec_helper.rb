@@ -52,6 +52,10 @@ RSpec.configure do |config|
       Slanger::Channel.instance_eval { @all = nil}
       Slanger::Presence::Channel.instance_eval { @all = nil}
 
+      Slanger::Service.instance_eval do
+        @node_id = nil
+      end
+
       Slanger::Redis.instance_eval do
         @regular_connection = nil
         @publisher = nil

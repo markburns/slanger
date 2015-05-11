@@ -6,6 +6,8 @@ describe 'Integration' do
   before(:each) { start_slanger { test_setup }}
 
   let(:test_setup) do
+    Slanger::Service.fetch_node_id!
+    Slanger::Service.set_online_status!
     allow(Slanger::Presence::Channel::RandomSubscriptionId).to receive(:next).
       and_return(*ids("subscription"))
 

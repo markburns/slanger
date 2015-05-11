@@ -48,12 +48,12 @@ describe Slanger::Presence::RosterAddition do
 
     it "calls the callback" do
       expect(callback).to receive :call
-      roster.add("subscription-1234", user_1, callback)
+      roster.add("node-1", "subscription-1234", user_1, callback)
     end
 
     it "adds values to the internal roster" do
-      roster.add("subscription-1234", user_1, callback)
-      expect(roster.internal_roster["node-1"][user_1]).to include "subscription-1234"
+      roster.add("node-1", "subscription-1234", user_1, callback)
+      expect(roster.internal_roster[user_1]["node-1"]).to include "subscription-1234"
     end
 
     it "adds to redis" do
@@ -69,25 +69,7 @@ describe Slanger::Presence::RosterAddition do
       expect(Slanger::Redis).to receive(:sadd).
         with("slanger-roster-presence-abcd-user-1", "subscription-1234")
 
-      roster.add("subscription-1234", user_1, callback)
-
-      # keys slanger-roster-presence-*-node-*
-      # slanger-roster-presence-abcd-user-1-node-1 #contains multiple subscriptions
-      #   subscription-1, subscription-2
-      # slanger-roster-presence-abcd-user-2-node-1
-      #   subscription-4, subscription-3
-      # slanger-roster-presence-abcd-user-2-node-2
-      # slanger-roster-presence-abcd-user-2-node-3
-      #
-      # smembers slanger-roster-presence-abcd-user-1-node-1
-      #   [subscription-1, subscription-2]
-      #slanger-roster-presence-abcd-user-1-node-2 set
-      #  [subscription-3, subscription-4]
-
-      # node-1 offline case
-      # keys slanger-roster-presence-*-node-1 each do |key|
-      #   hdel "slanger-internal-presence-abcd-#{key}", "node-1"
-      #
+      roster.add("node-1", "subscription-1234", user_1, callback)
 
     end
   end

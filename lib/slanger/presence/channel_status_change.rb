@@ -33,7 +33,7 @@ module Slanger
             push payload('pusher_internal:member_added', member)
           end
 
-          roster.add_internal message['subscription_id'], member
+          roster.add_internal message["node_id"], message['subscription_id'], member
         else
           # Don't tell the channel subscriptions the member has been removed if the subscriber data
           # still remains in the roster hash, e.g. multiple browser windows open.

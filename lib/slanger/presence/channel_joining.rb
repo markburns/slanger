@@ -7,6 +7,7 @@ module Slanger
 
         # Send event about the new subscription to the Redis slanger:connection_notification Channel.
         status_change = update_slanger_nodes_about_presence_change(
+          node_id: Slanger::Service.node_id,
           subscription_id: public_subscription_id,
           online: true,
           channel_data: channel_data,
@@ -16,7 +17,7 @@ module Slanger
         online_callback = online_callback_from(status_change, public_subscription_id, &blk)
 
         # Associate the subscription data to the public id in Redis.
-        roster.add(public_subscription_id, channel_data, online_callback)
+        roster.add(Slanger::Service.node_id, public_subscription_id, channel_data, online_callback)
 
         public_subscription_id
       end

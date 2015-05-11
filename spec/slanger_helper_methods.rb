@@ -3,12 +3,12 @@ module SlangerHelperMethods
     # Fork service. Our integration tests MUST block the main thread because we
     # want to wait for i/o to finish.
     fork_reactor do |channel|
-      blk.call if blk
       options = default_slanger_options.merge(options)
       Slanger::Config.load options
 
       start_websocket_server! options
       start_api_server! options
+      blk.call if blk
     end
 
     Slanger.debug "SPEC server_pids #{server_pids} "
@@ -25,7 +25,7 @@ module SlangerHelperMethods
     @server_pids ||= []
   end
 
-  def default_slanger_options 
+  def default_slanger_options
     { host:             '0.0.0.0',
       api_port:         '4567',
       websocket_port:   '8080',

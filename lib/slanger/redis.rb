@@ -9,12 +9,16 @@ module Slanger
 
     def_delegator  :publisher, :publish
     def_delegators :subscriber, :subscribe
-    def_delegators :regular_connection, :hgetall, :hdel, :hset, :hincrby, :sadd
+    def_delegators :regular_connection, :hgetall, :hdel, :hset, :hincrby, 
+      :sadd, :smembers
 
     def hgetall_sync(key)
       sync_redis_connection.hgetall key
     end
 
+    def sync_redis_connection
+      @sync_redis_connection ||= ::Redis.new url: Slanger::Config.redis_address
+    end
     private
 
     def regular_connection
@@ -39,9 +43,6 @@ module Slanger
       EM::Hiredis.connect Slanger::Config.redis_address
     end
 
-    def sync_redis_connection
-      @sync_redis_connection ||= ::Redis.new url: Slanger::Config.redis_address
-    end
 
     extend self
   end

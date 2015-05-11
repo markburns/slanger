@@ -50,8 +50,7 @@ describe "PresenceChannel Roster" do
         subscribe_to_presence_channel(ws_2, user, "random-socket-id-2")
 
 
-        EM.add_timer(0.5) do
-          Slanger.error "SPEC after fetch"
+        EM.add_timer(0.1) do
           user_1 = {"user_id" => "0f177369a3b71275d25ab1b44db9f95f", "user_info" => {}}
 
           expected = {

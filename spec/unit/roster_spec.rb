@@ -7,15 +7,8 @@ describe 'Slanger::Roster' do
 
   before do
     allow(Slanger).to receive(:node_id).and_return "node-1"
-
-    expect(Slanger::Redis).to receive(:hgetall_sync).
-      with(channel_id).
-      and_return([
-        user_1.to_s,
-        subscriptions_1.to_s,
-        user_2.to_s,
-        subscriptions_2.to_s,
-      ])
+    redis_roster = double "redis roster", fetch: internal_roster
+    expect(Slanger::RedisRoster).to receive(:new).and_return redis_roster
   end
 
   let(:user_1) { {"user_id" => "1", "user_info" => {}} }
@@ -33,12 +26,7 @@ describe 'Slanger::Roster' do
     }
   end
 
-
-  it "#internal_roster" do
-    expected = {user_1 => subscriptions_1, user_2 => subscriptions_2}
-
-    expect(roster.internal_roster).to eq expected
-  end
+  let(:internal_roster) { {user_1 => subscriptions_1, user_2 => subscriptions_2} }
 
   it "#present?" do
     expect(roster.present?(user_1)).to eq true
@@ -57,13 +45,6 @@ describe 'Slanger::Roster' do
   it "#ids" do
     expect(roster.ids).to eq ["1", "2"]
   end
-
-  it "#redis_to_hash" do
-    result = roster.redis_to_hash ["1", "2", "\"a\"", "{}"]
-
-    expect(result).to eq({1 => 2,"a"  => {}})
-  end
-
 end
 
 

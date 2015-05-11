@@ -7,10 +7,7 @@ module Slanger
 
       def initialize(channel_id)
         @channel_id = channel_id
-        @state = :initial
-
-        result = Slanger::Redis.hgetall_sync(channel_id)
-        @internal_roster = redis_to_hash(result)
+        @internal_roster = Slanger::RedisRoster.new(channel_id).fetch
       end
 
       def present?(member)
@@ -27,15 +24,10 @@ module Slanger
 
       def subscribers
         Hash[@internal_roster.keys.map { |v| [v['user_id'], v['user_info']] }]
+      rescue
+        byebug
+        {}
       end
-
-      def redis_to_hash(array)
-        array.each_slice(2).to_a.inject({}) do |result, (k,v)|
-          result[eval(k)]= eval(v)
-          result
-        end
-      end
-
     end
   end
 end
