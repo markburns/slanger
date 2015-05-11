@@ -34,6 +34,11 @@ describe 'Slanger::Roster' do
 
     expect(roster.internal_roster).to eq expected
   end
+  it "#present?" do
+    expect(roster.present?(user_1)).to eq true
+    expect(roster.present?(user_2)).to eq true
+    expect(roster.present?({"not" => "here"})).to eq false
+  end
 
   it "#subscribers" do
     expect(roster.subscribers).to eq({"1" => {}, "2" => {"something" => "here"}})

@@ -14,7 +14,7 @@ module Slanger
       end
 
       def present?(member)
-        @internal_roster.has_value? member
+        @internal_roster.has_key? member
       end
 
       def subscribers_count
