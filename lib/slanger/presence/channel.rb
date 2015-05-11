@@ -48,6 +48,9 @@ module Slanger
         @roster ||= Roster.new(channel_id)
       end
 
+      def payload(event_name, payload = {})
+        { channel: channel_id, event: event_name, data: payload }.to_json
+      end
     end
   end
 end

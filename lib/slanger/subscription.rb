@@ -3,7 +3,7 @@ module Slanger
     DIGEST = OpenSSL::Digest::SHA256.new
 
     attr_accessor :connection, :socket
-    delegate :send_payload, :send_message, :error, :socket_id, to: :connection
+    delegate :push_payload, :push_message, :error, :socket_id, to: :connection
 
     def initialize socket, socket_id, msg
       @connection = Connection.new socket, socket_id
@@ -11,14 +11,13 @@ module Slanger
     end
 
     def subscribe
-
       subscription_id = channel.join { |m|
-        send_message m
+        push_message m
       }
 
       Slanger.debug "#{self.class} subscribed socket_id: #{socket_id} to channel_id: #{channel_id} subscription_id: #{subscription_id}"
 
-      send_payload channel_id, 'pusher_internal:subscription_succeeded'
+      push_payload channel_id, 'pusher_internal:subscription_succeeded'
 
       subscription_id
     end

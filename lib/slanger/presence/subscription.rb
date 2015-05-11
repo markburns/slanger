@@ -10,7 +10,9 @@ module Slanger
           })
         end
 
-        subscription_id = channel.join(@msg)
+        subscription_id = channel.join(@msg) do |m|
+          push_message m
+        end
       end
 
       private

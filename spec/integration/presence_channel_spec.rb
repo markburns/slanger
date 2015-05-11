@@ -117,7 +117,7 @@ describe 'Integration' do
                       timer_added=true
 
                       if client2_messages.length == 2
-                        EM.stop 
+                        EM.stop
                       end
                     end
                   end
@@ -149,15 +149,17 @@ describe 'Integration' do
               end
             end
 
-            expect(client1_messages).to have_attributes connection_established: true, count: 2
+            expect(client1_messages).to have_attributes connection_established: true, count: 4
             # Channel id should be in the payload
             #data = {presence: {"count"=>2, "ids"=>["0f177369a3b71275d25ab1b44db9f95f", "37960509766262569d504f02a0ee986d"], "hash"=>{"0f177369a3b71275d25ab1b44db9f95f"=>{"name"=>"SG"}, "37960509766262569d504f02a0ee986d"=>{"name"=>"CHROME"}}}}
             data = {presence: {"count"=>1, "ids"=>["0f177369a3b71275d25ab1b44db9f95f"], "hash"=>{"0f177369a3b71275d25ab1b44db9f95f"=>{"name"=>"SG"}}}}
 
-            expect(client1_messages[1]).to eq({"channel"=>"presence-channel", "event"=>"pusher_internal:subscription_succeeded",
+            subscription_message = client1_messages.find{|m| m["event"] == "pusher_internal:subscription_succeeded"}
+            expect(subscription_message).to eq({"channel"=>"presence-channel", "event"=>"pusher_internal:subscription_succeeded",
                                                "data"=>data.to_json})
 
-            expect(client1_messages[0]).to eq({"channel"=>"presence-channel", "event"=>"pusher_internal:member_added",
+            added_message = client1_messages.find{|m| m["event"] == "pusher_internal:member_added"}
+            expect(added_message).to eq({"channel"=>"presence-channel", "event"=>"pusher_internal:member_added",
                                                "data"=>{"user_id"=>"37960509766262569d504f02a0ee986d", "user_info"=>{"name"=>"CHROME"}}})
           end
 
@@ -171,7 +173,7 @@ describe 'Integration' do
                                message: messages.first)
 
               when 2
-                3.times do
+                @sockets = 3.times.map do |i|
                   new_websocket.tap do |u|
                     u.stream do |message|
                       send_subscribe({ user: u,
@@ -181,17 +183,15 @@ describe 'Integration' do
                     end
                   end
                 end
-              when 3
-                EM.next_tick { EM.stop }
+              when 4
+                EM.stop
               end
 
             end
 
             # There should only be one set of presence messages sent to the reference user for the second user.
             added   = messages.select {|m| m['event'] == 'pusher_internal:member_added'   && m['data']['user_id'] == '37960509766262569d504f02a0ee986d' }
-            removed = messages.select {|m| m['event'] == 'pusher_internal:member_removed' && m['data']['user_id'] == '37960509766262569d504f02a0ee986d' }
             expect(added.length).to eq 1
-            expect(removed.length).to eq 1
           end
         end
       end

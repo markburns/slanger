@@ -11,7 +11,7 @@ module Slanger
   class Handler
 
     attr_accessor :connection
-    delegate :error, :send_payload, :socket_id, to: :connection
+    delegate :error, :push_payload, :socket_id, to: :connection
 
     def initialize(socket, handshake)
       @socket        = socket
@@ -72,7 +72,7 @@ module Slanger
     end
 
     def pusher_ping(msg)
-      send_payload nil, 'pusher:pong'
+      push_payload nil, 'pusher:pong'
     end
 
     def pusher_pong msg; end

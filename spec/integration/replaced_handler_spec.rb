@@ -4,7 +4,7 @@ require 'lib/slanger/handler.rb'
 class ReplacedHandler < Slanger::Handler
   def authenticate
     super
-    send_payload nil, 'pusher:info', { message: "Welcome!" }
+    push_payload nil, 'pusher:info', { message: "Welcome!" }
   end
 end
 

@@ -130,15 +130,37 @@ module SlangerHelperMethods
     subscribe_to_presence_channel(websocket, info, socket_id)
   end
 
+  def send_unsubscribe options
+    info      = { user_id: options[:user_id], user_info: { name: options[:name] } }
+    socket_id = JSON.parse(options[:message]['data'])['socket_id']
+    websocket = options[:user]
+
+    unsubscribe_from_presence_channel(websocket, info, socket_id)
+  end
+
 
   def subscribe_to_presence_channel websocket, user_info, socket_id
-
     digest = OpenSSL::Digest::SHA256.new
     to_sign   = [socket_id, 'presence-channel', user_info.to_json].join ':'
     auth = [Pusher.key, OpenSSL::HMAC.hexdigest(digest, Pusher.secret, to_sign)].join(':')
 
     websocket.send({
       event: 'pusher:subscribe',
+      data: {
+        auth: auth,
+        channel_data: user_info.to_json,
+        channel: 'presence-channel'
+      }
+    }.to_json)
+  end
+
+  def unsubscribe_from_presence_channel websocket, user_info, socket_id
+    digest = OpenSSL::Digest::SHA256.new
+    to_sign   = [socket_id, 'presence-channel', user_info.to_json].join ':'
+    auth = [Pusher.key, OpenSSL::HMAC.hexdigest(digest, Pusher.secret, to_sign)].join(':')
+
+    websocket.send({
+      event: 'pusher:unsubscribe',
       data: {
         auth: auth,
         channel_data: user_info.to_json,

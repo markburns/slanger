@@ -27,11 +27,12 @@ module Slanger
           # Don't tell the channel subscribers a new member has been added if the subscriber data
           # is already present in the roster hash, e.g. multiple browser windows open.
           if roster.present?(member)
-            Slanger.debug "member already present in roster not sending pusher_internal:member_added"
+            Slanger.debug "Roster member already present in roster not sending pusher_internal:member_added"
           else
-            Slanger.debug "member was absent from roster, send pusher_internal:member_added"
+            Slanger.debug "Roster member is absent from roster, send pusher_internal:member_added"
             push payload('pusher_internal:member_added', member)
           end
+
           roster.add_internal message['subscription_id'], member
         else
           # Don't tell the channel subscriptions the member has been removed if the subscriber data
@@ -41,10 +42,6 @@ module Slanger
             push payload('pusher_internal:member_removed', { user_id: member['user_id'] })
           end
         end
-      end
-
-      def payload(event_name, payload = {})
-        { channel: channel_id, event: event_name, data: payload }.to_json
       end
     end
   end

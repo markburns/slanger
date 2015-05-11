@@ -1,7 +1,7 @@
 module Slanger
   module Presence
     module ChannelJoining
-      def join(msg)
+      def join(msg, &blk)
         channel_data = JSON.parse msg['data']['channel_data']
         public_subscription_id = RandomSubscriptionId.next
 
@@ -13,9 +13,7 @@ module Slanger
           channel: channel_id
         )
 
-        online_callback = online_callback_from(status_change, public_subscription_id) do
-          push payload('pusher_internal:subscription_succeeded', summary_info.to_json)
-        end
+        online_callback = online_callback_from(status_change, public_subscription_id, &blk)
 
         # Associate the subscription data to the public id in Redis.
         roster.add(public_subscription_id, channel_data, online_callback)
@@ -29,15 +27,15 @@ module Slanger
         end
       end
 
-      def online_callback_from(status_change_redis, public_subscription_id)
+      def online_callback_from(status_change_redis, public_subscription_id, &blk)
         Proc.new do
           EM.next_tick do
             # fuuuuuuuuuccccccck!
             status_change_redis.callback do |*result|
               Slanger.debug "Redis online slanger:connection_notification complete, public_subscription_id: #{public_subscription_id} result: #{result}"
 
-              id = em_channel.subscribe ->(*a){}
-              yield
+              id = em_channel.subscribe &blk
+              push payload('pusher_internal:subscription_succeeded', summary_info.to_json)
 
               Slanger.debug "PresenceChannel joined em_channel: #{id} public_subscription_id: #{public_subscription_id}"
 

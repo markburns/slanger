@@ -6,8 +6,7 @@ module Slanger
       @socket, @socket_id = socket, socket_id
     end
 
-    def send_message(m)
-      #msg = m.is_a?(String) ?  JSON.parse(m) : m
+    def push_message(m)
       msg = JSON.parse m
 
       s = msg.delete 'socket_id'
@@ -20,7 +19,7 @@ module Slanger
       end
     end
 
-    def send_payload *args
+    def push_payload *args
       formatted = format(*args)
       Slanger.info "Sending payload to websocket: #{socket_id} #{formatted}"
       socket.send formatted
@@ -29,7 +28,7 @@ module Slanger
     def error e
       begin
         Slanger.error e
-        send_payload nil, 'pusher:error', e
+        push_payload nil, 'pusher:error', e
       rescue EventMachine::WebSocket::WebSocketError
         # Raised if connecection already closed. Only seen with Thor load testing tool
         Slanger.error "Connection closed whilst trying to send error: #{e}"
@@ -40,7 +39,7 @@ module Slanger
       @socket_id = RandomSocketId.next
       Slanger.info "Acknowledging connection established socket_id: #{@socket_id}"
 
-      send_payload nil, 'pusher:connection_established', {
+      push_payload nil, 'pusher:connection_established', {
         socket_id: @socket_id,
         activity_timeout: Slanger::Config.activity_timeout
       }
