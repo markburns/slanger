@@ -12,9 +12,9 @@ require 'fiber'
 module Slanger
   module Presence
     class Channel < Slanger::Channel
-      include Joining
-      include Leaving
-      include StatusChange
+      include ChannelJoining
+      include ChannelLeaving
+      include ChannelStatusChange
 
       def initialize(*args)
         super *args

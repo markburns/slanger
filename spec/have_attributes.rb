@@ -8,7 +8,7 @@ module SlangerHelperMethods
     CHECKS = %w(first_event last_event last_data count)
 
     def matches?(messages)
-      @messages = messages.dup.map{|a| m = a.dup; m["data"] = JSON.parse(m["data"]) if m["data"]; m}
+      @messages = messages
       @failures = []
 
       check_connection_established if attributes[:connection_established]
@@ -20,23 +20,33 @@ module SlangerHelperMethods
     end
 
     def check message
-      send(message) == attributes[message.to_sym] or @failures << message
+      attribute(message) == attributes[message.to_sym] or @failures << message
     end
 
     def failure_message
-      @failures.map {|f| "expected #{f}: to equal #{attributes[f.to_sym]} but got #{send(f)}\n messages: #{messages}"}.join "\n"
+      @failures.map {|f| "expected #{f} to equal #{attributes[f.to_sym].inspect} but got #{attribute(f).inspect}\n" }.join("\n") + "messages: #{messages}"
     end
 
+
+    def attribute(name)
+      send(name)
+    rescue NoMethodError
+      nil
+    end
     private
 
     def check_connection_established
       if first_event != 'pusher:connection_established'
+        @attributes.delete :connection_established
         @failures << :connection_established
       end
     end
 
     def check_id_present
-      if messages.first['data']['socket_id'] == nil
+      data = JSON.parse messages.first["data"]
+
+      if data["socket_id"] == nil
+        @attributes.delete :id_present
         @failures << :id_present
       end
     end

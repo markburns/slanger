@@ -1,6 +1,6 @@
 module Slanger
   module Presence
-    module Joining
+    module ChannelJoining
       def join(msg)
         channel_data = JSON.parse msg['data']['channel_data']
         public_subscription_id = RandomSubscriptionId.next

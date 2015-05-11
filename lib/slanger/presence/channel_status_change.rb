@@ -1,6 +1,6 @@
 module Slanger
   module Presence
-    module StatusChange
+    module ChannelStatusChange
       private
 
       def update_slanger_nodes_about_presence_change(payload, retry_count=0)

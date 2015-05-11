@@ -88,8 +88,8 @@ module Slanger
     # are accepted. Public channels only get events from the API.
     def send_client_message(message)
       if authenticated?
-        Slanger.debug "#{__method__} publish to redis: #{messsage}"
-        Slanger::Redis.publish(message['channel'], message.to_json) 
+        Slanger.debug "#{__method__} publish to redis: #{message}"
+        Slanger::Redis.publish(message['channel'], message.to_json)
       end
     end
 
@@ -97,10 +97,10 @@ module Slanger
     # which will send it to subscribed clients.
     def dispatch(message, channel_id)
       if channel_id =~ /^slanger:/
-        Slanger.debug "Channel#dispatch: Push message to em_channel channel_id: #{channel_id} message: #{message}"
-        push(message.to_json) 
-      else
         Slanger.debug "Not dispatching slanger message for channel_id: #{channel_id} message: #{message}"
+      else
+        Slanger.debug "Channel#dispatch: Push message to em_channel channel_id: #{channel_id} message: #{message}"
+        push(message.to_json)
       end
     end
 

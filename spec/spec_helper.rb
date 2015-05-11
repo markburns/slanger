@@ -62,9 +62,7 @@ RSpec.configure do |config|
         @websocket_server_signature = nil
       end
 
-      Slanger.debug "*****************************"
-      Slanger.debug e.full_description
-      Slanger.debug "*****************************"
+      Slanger.error e.full_description
 
       e.run
 

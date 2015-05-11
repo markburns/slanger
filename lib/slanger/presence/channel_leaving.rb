@@ -1,6 +1,6 @@
 module Slanger
   module Presence
-    module Leaving
+    module ChannelLeaving
       def leave(public_subscription_id)
         Slanger.debug "Leave presence channel public_subscription_id: #{public_subscription_id}"
 

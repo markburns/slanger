@@ -52,7 +52,8 @@ describe 'Integration' do
           client1, client2 = new_websocket, new_websocket
           client2_messages, client1_messages = [], []
 
-          stream(client1, client1_messages) do |message|
+          stream(client1, client1_messages, "client1") do |message|
+            Slanger.error "client1_messages: #{client1_messages}"
             case client1_messages.length
             when 1
               private_channel client1, client1_messages.first
@@ -61,7 +62,8 @@ describe 'Integration' do
             end
           end
 
-          stream(client2, client2_messages) do |message|
+          stream(client2, client2_messages, "client2") do |message|
+            Slanger.error "client2_messages: #{client2_messages}"
             case client2_messages.length
             when 1
               private_channel client2, client2_messages.first

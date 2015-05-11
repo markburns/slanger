@@ -11,11 +11,11 @@ module Slanger
     end
 
     def subscribe
-      raise NotImplementedError
 
       subscription_id = channel.join { |m|
         send_message m
       }
+
       Slanger.debug "#{self.class} subscribed socket_id: #{socket_id} to channel_id: #{channel_id} subscription_id: #{subscription_id}"
 
       send_payload channel_id, 'pusher_internal:subscription_succeeded'

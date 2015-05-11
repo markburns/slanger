@@ -14,7 +14,7 @@ describe 'Integration:' do
         when 2
           Pusher['MY_CHANNEL'].trigger 'an_event', some: "Mit Raben Und Wölfen"
         when 3
-            EM.next_tick { EM.stop }
+          EM.next_tick { EM.stop }
         end
      end
 
@@ -87,7 +87,7 @@ describe 'Integration:' do
         end
       end
 
-      expect(client1_messages).to have_attributes count: 2
+      expect(client1_messages).to have_attributes count: 3
 
       expect(client2_messages).to have_attributes last_event: 'an_event',
                                               last_data: { some: 'data' }.to_json
