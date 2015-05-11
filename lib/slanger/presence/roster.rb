@@ -29,11 +29,9 @@ module Slanger
         Hash[@internal_roster.values.map { |v| [v['user_id'], v['user_info']] }]
       end
 
-      private
-
       def redis_to_hash(array)
         array.each_slice(2).to_a.inject({}) do |result, (k,v)|
-          result[k]= eval(v)
+          result[eval(k)]= eval(v)
           result
         end
       end
