@@ -37,8 +37,8 @@ describe "PresenceChannel Roster" do
       end
     end
 
-    pending do
-      roster_1 = Slanger::Roster.new "presence-channel"
+    it do
+      roster_1 = Slanger::Presence::Roster.new "presence-channel"
 
       em_thread do
         ws_1 = new_websocket
@@ -49,29 +49,23 @@ describe "PresenceChannel Roster" do
         ws_2 = new_websocket
         subscribe_to_presence_channel(ws_2, user, "random-socket-id-2")
 
-        EM.add_timer(1) do
-          Slanger.error "SPEC before fetch"
 
-          roster_1.fetch
+        EM.add_timer(0.5) do
+          Slanger.error "SPEC after fetch"
+          user_1 = {"user_id" => "0f177369a3b71275d25ab1b44db9f95f", "user_info" => {}}
 
-          EM.add_timer(0.2) do
-            Slanger.error "SPEC after fetch"
-            user_1 = {"user_id" => "0f177369a3b71275d25ab1b44db9f95f", "user_info" => {}}
-
-            expected = {
-              user_1 => {
-                "node:1" => ["subscription:abc"],
-                "node:2" => ["subscription:def"]
-              }
+          expected = {
+            user_1 => {
+              "node:1" => ["subscription:abc"],
+              "node:2" => ["subscription:def"]
             }
+          }
 
-            expect(roster_1.internal_roster).to eq expected
+          expect(roster_1.internal_roster).to eq expected
 
-            EM.stop
-          end
+          EM.stop
         end
       end
-
     end
   end
 end
