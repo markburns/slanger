@@ -6,6 +6,8 @@ describe 'Slanger::Roster' do
   let(:channel_id) { "presence-abcd" }
 
   before do
+    allow(Slanger).to receive(:node_id).and_return "node-1"
+
     expect(Slanger::Redis).to receive(:hgetall_sync).
       with(channel_id).
       and_return([
@@ -20,20 +22,24 @@ describe 'Slanger::Roster' do
   let(:user_2) { {"user_id" => "2", "user_info" => {"something" =>"here"}} }
 
   let(:subscriptions_1) do
-    { "node:1" => ["subscription:socket-1"],
-      "node:2" => ["subscription:socket-2"] }
+    { "node-1" => ["subscription-1"],
+      "node-2" => ["subscription-2"] }
   end
 
   let(:subscriptions_2) do
-    { "node:3" => ["subscription:socket-3", "subscription:socket-4"],
-      "node:2" => ["subscription:socket-5"] }
+    {
+      "node-2" => ["subscription-3"],
+      "node-3" => ["subscription-4", "subscription-5"]
+    }
   end
+
 
   it "#internal_roster" do
     expected = {user_1 => subscriptions_1, user_2 => subscriptions_2}
 
     expect(roster.internal_roster).to eq expected
   end
+
   it "#present?" do
     expect(roster.present?(user_1)).to eq true
     expect(roster.present?(user_2)).to eq true
@@ -57,6 +63,7 @@ describe 'Slanger::Roster' do
 
     expect(result).to eq({1 => 2,"a"  => {}})
   end
+
 end
 
 

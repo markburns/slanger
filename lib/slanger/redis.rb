@@ -9,7 +9,7 @@ module Slanger
 
     def_delegator  :publisher, :publish
     def_delegators :subscriber, :subscribe
-    def_delegators :regular_connection, :hgetall, :hdel, :hset, :hincrby
+    def_delegators :regular_connection, :hgetall, :hdel, :hset, :hincrby, :sadd
 
     def hgetall_sync(key)
       sync_redis_connection.hgetall key
