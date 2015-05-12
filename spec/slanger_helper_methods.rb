@@ -8,6 +8,8 @@ module SlangerHelperMethods
 
       start_websocket_server! options
       start_api_server! options
+      Slanger::Service.fetch_node_id!
+      Slanger::Service.set_online_status!
       blk.call if blk
     end
 
@@ -92,8 +94,8 @@ module SlangerHelperMethods
     ws
   end
 
-  def em_stream opts = {}
-    messages = []
+  def em_stream opts = {}, messages=nil
+    messages ||= []
 
     em_thread do
       websocket = new_websocket opts

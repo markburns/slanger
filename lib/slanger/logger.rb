@@ -31,7 +31,8 @@ module Slanger
           msg = "\n#{stack}\n#{msg}\n"
           klass = binding.of_caller(1).eval('self.class')
           meth  = binding.of_caller(1).eval('__method__')
-          msg = "#{klass}##{meth}#{msg}"
+
+          msg = "node-#{Slanger::Service.node_id} #{klass}##{meth}#{msg}"
           logger.send(m, msg)
         end
       end
