@@ -7,7 +7,7 @@ module Slanger
 
       def initialize(channel_id)
         @channel_id = channel_id
-        @internal_roster = Slanger::RedisRoster.new(channel_id).fetch
+        @internal_roster = Slanger::RedisRoster.fetch(channel_id)
       end
 
       def present?(member)
@@ -24,9 +24,6 @@ module Slanger
 
       def subscribers
         Hash[@internal_roster.keys.map { |v| [v['user_id'], v['user_info']] }]
-      rescue
-        byebug
-        {}
       end
     end
   end
