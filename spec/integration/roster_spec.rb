@@ -20,8 +20,8 @@ describe "PresenceChannel Roster" do
 
     before do
       `killall -9 haproxy`
-      test_setup_1 = socket_id_block(roster_index=0, node_id=1, socket_ids=1, 3)
-      test_setup_2 = socket_id_block(roster_index=1, node_id=2, socket_ids=2, 4)
+      test_setup_1 = socket_id_block(roster_index=0, node_id="N1", socket_ids="S1", "S3")
+      test_setup_2 = socket_id_block(roster_index=1, node_id="N2", socket_ids="S2", "S4")
 
       start_slanger(websocket_port: 8081, api_port: 4568, &test_setup_1)
       start_slanger(websocket_port: 8082, api_port: 4569, &test_setup_2)
@@ -40,7 +40,7 @@ describe "PresenceChannel Roster" do
       Proc.new do
         expect(Slanger::Connection::RandomSocketId).
           to receive(:next).
-          and_return(*socket_ids.map{|id| "socket-#{id}"})
+          and_return(*socket_ids.map{|id| "S#{id}"})
 
         allow(Slanger).to receive(:node_id).and_return(node_id)
         allow(Slanger::Presence::Roster).to receive(:new).and_return(@unique_rosters[roster_index])
@@ -60,12 +60,13 @@ describe "PresenceChannel Roster" do
         stream(ws_1, messages_1) do |message|
           case messages_1.length
           when 1
-            subscribe_to_presence_channel(ws_1, user, "socket-1")
+            subscribe_to_presence_channel(ws_1, user, "S1")
           when 2
             EM.add_periodic_timer(0.3) do
               if messages_2.length == 2
-                expect(@unique_rosters[0].internal_roster).to eq({})
-                expect(@unique_rosters[1].internal_roster).to eq({})
+                #TODO fix this
+                expect(@unique_rosters[0].internal_roster).to eq({"N1" =>{"S1" => user}})
+                expect(@unique_rosters[1].internal_roster).to eq({"N2" =>{"S2" => user}})
 
 
                 EM.stop
@@ -79,7 +80,7 @@ describe "PresenceChannel Roster" do
         stream(ws_2, messages_2) do |message|
           case messages_2.length
           when 1
-            subscribe_to_presence_channel(ws_2, user, "socket-2")
+            subscribe_to_presence_channel(ws_2, user, "S2")
           end
         end
       end
