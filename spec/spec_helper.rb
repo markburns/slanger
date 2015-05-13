@@ -15,7 +15,6 @@ require 'pry'
 require 'webmock/rspec'
 require 'slanger'
 
-require "redis"
 
 WebMock.disable!
 

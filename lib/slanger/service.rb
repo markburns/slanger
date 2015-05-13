@@ -24,6 +24,7 @@ module Slanger
         start_websocket_server!
         set_online_status!
       rescue
+        stop
         remove_pid!
       end
 
@@ -50,6 +51,7 @@ module Slanger
       def start_websocket_server!
         options = map_options_for_websocket_server(Slanger::Config)
 
+        Slanger.info "OPTIONS #{options}"
         @websocket_server_signature = Slanger::WebSocketServer.run(options)
 
         Slanger.debug "websocket_server_signature: #{@websocket_server_signature}"
@@ -57,7 +59,7 @@ module Slanger
 
       def map_options_for_websocket_server(options)
         opt = {
-          host:    options[:host],
+          host:    options[:websocket_host],
           port:    options[:websocket_port],
           debug:   options[:debug],
           app_key: options[:app_key]

@@ -3,6 +3,7 @@ require 'bundler/setup'
 
 require 'eventmachine'
 require 'em-hiredis'
+require "redis"
 require 'rack'
 require 'active_support/core_ext/string'
 require File.join(File.dirname(__FILE__), 'lib', 'slanger', 'version')

@@ -29,10 +29,12 @@ module Slanger
 
         else
           msg = "\n#{stack}\n#{msg}\n"
-          klass = binding.of_caller(1).eval('self.class')
-          meth  = binding.of_caller(1).eval('__method__')
+          if ENV["DEVELOPMENT"]
+            klass = binding.of_caller(1).eval('self.class')
+            meth  = binding.of_caller(1).eval('__method__')
 
-          msg = "node-#{Slanger::Service.node_id} #{klass}##{meth}#{msg}"
+            msg = "node-#{Slanger::Service.node_id} #{klass}##{meth}#{msg}"
+          end
           logger.send(m, msg)
         end
       end
@@ -46,7 +48,7 @@ module Slanger
     def get_line_summary_from(line)
       path, line_number, _ = line.split(":")
       filename = Pathname.new(path).each_filename.to_a[-3..-1].join "/" rescue ""
-      if filename["slanger/spec"]
+      if filename && filename["slanger/spec"]
         filename.gsub! /\Aslanger\//, ""
       end
 
