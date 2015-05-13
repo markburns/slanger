@@ -28,6 +28,7 @@ module Slanger
           roster.delete params.node_id
         end
       end
+
       private
 
       def removal_success(params, &blk)

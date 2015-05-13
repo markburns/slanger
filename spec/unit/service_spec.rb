@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Slanger::Service do
   describe "#fetch_node_id!"do
-    it do
+    pending do
       redis = double "redis"
       expect(Slanger::Redis).to receive(:sync_redis_connection).and_return redis
 
