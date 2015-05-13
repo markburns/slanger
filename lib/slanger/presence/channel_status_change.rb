@@ -22,12 +22,11 @@ module Slanger
 
       def handle_slanger_connection_notification(message)
         Slanger.debug "incoming message #{__method__} #{message}"
+        node_id = message["node_id"]
+        subscription_id = message["subscription_id"]
 
         if message["online"]
           member = message['channel_data']
-          node_id = message["node_id"]
-          subscription_id = message["subscription_id"]
-
           roster.add(node_id, subscription_id, member) do |added|
             # Don't tell the channel subscribers a new member has been added if the subscriber data
             # is already present in the roster hash, e.g. multiple browser windows open.
@@ -36,10 +35,11 @@ module Slanger
             end
           end
         else
-          # Don't tell the channel subscriptions the member has been removed if the subscriber data
-          # still remains in the roster hash, e.g. multiple browser windows open.
-          member = roster.remove message["node_id"], message['subscription_id'] do |removed|
+          roster.remove node_id, subscription_id do |removed|
             if removed
+              # Don't tell the channel subscriptions the member has been removed if the subscriber data
+              # still remains in the roster hash, e.g. multiple browser windows open.
+
               push payload('pusher_internal:member_removed', { user_id: member['user_id'] })
             end
           end

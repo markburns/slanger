@@ -78,8 +78,7 @@ module Slanger
     def pusher_pong msg; end
 
     def pusher_subscribe(msg)
-      Slanger.debug "#{__method__} #{msg}"
-      Slanger.debug "Existing subscriptions: #{@subscriptions}"
+      Slanger.debug "#{__method__} #{msg}, \nExisting subscriptions: #{@subscriptions}"
       channel_id = msg['data']['channel']
       klass      = subscription_klass channel_id
 

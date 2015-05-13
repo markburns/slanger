@@ -24,9 +24,8 @@ module Slanger
           user_id = member["user_id"]
           added_to_roster = res == 1
 
-          if added_to_roster
-            @user_mapping[member["user_id"]]=member["user_info"]
-          end
+          @user_mapping[member["user_id"]]=member["user_info"]
+
           Slanger::Redis.hset(params.node_key, params.subscription_id, user_id).
             errback(&addition_error(params, member)).
             callback(&individual_subscriber_key_success(params, member, on_add_callback, added_to_roster, &blk))

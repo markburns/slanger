@@ -12,10 +12,6 @@ module Slanger
         @user_mapping    = redis_roster.user_mapping
       end
 
-      def present?(member)
-        @internal_roster.has_key? member
-      end
-
       def subscribers_count
         subscribers.size
       end

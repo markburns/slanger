@@ -37,9 +37,7 @@ module Slanger
           if user_in_roster?(user)
             blk.call
           else
-            if user
-              @user_mapping.delete(user["user_id"])
-            end
+            @user_mapping.delete(user["user_id"]) rescue nil
 
             Slanger::Redis.srem(params.channel_key, user.to_json) do
               blk.call
