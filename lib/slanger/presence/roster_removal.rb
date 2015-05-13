@@ -48,8 +48,6 @@ module Slanger
       def removal_error(params)
         Proc.new do |e|
           Slanger.error "roster.remove failed #{e} params: #{params.full}"
-          #TODO remove this EM.stop
-          raise e
         end
       end
 
