@@ -6,7 +6,7 @@ describe Slanger::Presence::RosterAddition do
   let(:channel_id) { "presence-abcd" }
 
   before do
-    allow(Slanger).to receive(:node_id).and_return "node-1"
+    allow(Slanger).to receive(:node_id).and_return "N1"
 
     #smembers presence-abcd  => [{user-1}, {user-2}, ...]
     allow(Slanger::Redis).to receive(:smembers).
@@ -21,39 +21,37 @@ describe Slanger::Presence::RosterAddition do
   let(:user_2) { {"user_id" => "2", "user_info" => {"something" =>"here"}} }
 
   let(:subscriptions_1) do
-    { "node-1" => ["subscription-1"],
-      "node-2" => ["subscription-2"] }
+    { "N1" => ["S1"],
+      "N2" => ["S2"] }
   end
 
   let(:subscriptions_2) do
-    { "node-3" => ["subscription-3", "subscription-4"],
-      "node-2" => ["subscription-5"] }
+    { "N3" => ["S3", "S4"],
+      "N2" => ["S5"] }
   end
 
   {{"user_id"=>"1", "user_info"=>{}}=>{
-    "node-1"=>["subscription-1"],
-    "node-2"=>["subscription-2"]},
+    "N1"=>["S1"],
+    "N2"=>["S2"]},
 
   {"user_id"=>"2", "user_info"=>{"something"=>"here"}}=>{
-    "node-3"=>["subscription-3", "subscription-4"],
-    "node-2"=>["subscription-5"]}}
+    "N3"=>["S3", "S4"],
+    "N2"=>["S5"]}}
 
   describe "#add" do
     before do
-      deferrable = double "deferrable", errback: nil
-      allow(Slanger::Redis).to receive(:sadd).and_return deferrable
-      allow(deferrable).to receive(:callback).and_yield(1).and_return deferrable
     end
+
     let(:callback) { double "callback", call: nil }
 
     it "calls the callback" do
       expect(callback).to receive :call
-      roster.add("node-1", "subscription-1234", user_1, callback)
+      roster.add("N1", "S1234", user_1, callback)
     end
 
     it "adds values to the internal roster" do
-      roster.add("node-1", "subscription-1234", user_1, callback)
-      expect(roster.internal_roster[user_1]["node-1"]).to include "subscription-1234"
+      roster.add("N1", "S1234", user_1, callback)
+      expect(roster.internal_roster[user_1]["N1"]).to include "S1234"
     end
 
     it "adds to redis" do
@@ -61,15 +59,15 @@ describe Slanger::Presence::RosterAddition do
       # SADD presence-abcd {user-1}
       #   return value 1 => trigger member_added
       #   return value 0 => no-op
-      # SADD slanger-roster-presence-abcd-user-1-node-1 subscription-id
-      #presence-channel-user-1 node-1 => [subscription-1, subscription-2]
+      # SADD slanger-roster-presence-abcd-user-1-N1 Sid
+      #presence-channel-user-1 N1 => [S1, S2]
       expect(Slanger::Redis).to receive(:sadd).
         with("presence-abcd", user_1)
 
       expect(Slanger::Redis).to receive(:sadd).
-        with("slanger-roster-presence-abcd-user-1", "subscription-1234")
+        with("slanger-roster-presence-abcd-user-1", "S1234")
 
-      roster.add("node-1", "subscription-1234", user_1, callback)
+      roster.add("N1", "S1234", user_1, callback)
 
     end
   end
