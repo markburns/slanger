@@ -6,7 +6,7 @@ module Slanger
 
         em_channel.unsubscribe(public_to_em_channel_table.delete(public_subscription_id))
 
-        roster.remove(public_subscription_id) do
+        roster.remove(Slanger::Service.node_id, public_subscription_id) do
           Slanger.debug "Roster removal complete for public_subscription_id: #{public_subscription_id}"
 
           update_slanger_nodes_about_presence_change(

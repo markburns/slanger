@@ -29,8 +29,6 @@ describe "PresenceChannel Roster" do
       start_ha_proxy
       wait_for_socket(8080)
       wait_for_socket(4567)
-
-      byebug
     end
 
     def socket_id_block(roster_index, node_id, *socket_ids)
@@ -64,10 +62,10 @@ describe "PresenceChannel Roster" do
           when 1
             subscribe_to_presence_channel(ws_1, user, "socket-1")
           when 2
-            EM.add_periodic_timer(0.1) do
-              if messages_2.length == 3
-                expect(@unique_rosters[0].internal_roster).to eq expected
-                expect(@unique_rosters[1].internal_roster).to eq expected
+            EM.add_periodic_timer(0.3) do
+              if messages_2.length == 2
+                expect(@unique_rosters[0].internal_roster).to eq({})
+                expect(@unique_rosters[1].internal_roster).to eq({})
 
 
                 EM.stop

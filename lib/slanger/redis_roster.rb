@@ -13,23 +13,27 @@ module Slanger
     def fetch
       redis = Slanger::Redis.sync_redis_connection
 
-      members = redis.smembers "slanger-roster-presence-abcd"
-      members = members.map{|m| eval m}
+      users = redis.smembers "slanger-roster-#{channel_id}"
+      users = users.map{|m| JSON.parse(m)}
 
       node_ids = Slanger::Service.present_node_ids
 
-      members.each_with_object({}) do |u, result|
-        user_id = u["user_id"]
-        node_ids.each do |node_id|
-          key = "slanger-roster-#{channel_id}-user-#{user_id}-node-#{node_id}"
-          subscription_ids = redis.smembers key
+      node_ids.each_with_object({}) do |node_id, roster|
+        subscriptions = redis.hgetall "slanger-roster-#{channel_id}-node-#{node_id}"
 
-          if subscription_ids.any?
-            result[u] ||= {}
-            result[u][node_id] ||= []
-            result[u][node_id] = subscription_ids
-          end
+        subscriptions.each do |subscription_id, user_id|
+          roster[node_id] ||= {}
+          roster[node_id][subscription_id] = users.find{|u| u["user_id"] == user_id }
         end
+      end
+
+    end
+
+    private
+
+    def redis_to_hash(array)
+      array.each_slice(2).to_a.each_with_object({}) do |(k,v), result|
+        result[k]= JSON.parse(v)
       end
     end
   end
