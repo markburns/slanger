@@ -18,9 +18,13 @@ describe Slanger::Presence::RosterRemoval do
 
   end
 
-  def set_internal(internal)
-    expect(Slanger::RedisRoster).to receive(:fetch).and_return(internal)
+  def set_internal(internal, user_mapping={})
+    redis_roster = double "redis roster"
+    expect(Slanger::RedisRoster).to receive(:new).and_return(redis_roster)
+    expect(redis_roster).to receive(:internal_roster).and_return(internal)
+    expect(redis_roster).to receive(:user_mapping).and_return(user_mapping)
   end
+
   describe "#user_in_roster?" do
     it "with an empty hash of users" do
       set_internal({})
@@ -39,7 +43,7 @@ describe Slanger::Presence::RosterRemoval do
   end
 
   describe "#remove_internal" do
-    let(:params) { Slanger::Presence::Roster::Params.new channel_id, "N1", "S1" }
+    let(:params) { Slanger::Presence::RosterParams.new channel_id, "N1", "S1" }
     let(:user_1) { {"user_id" => "U1"} }
 
     it "copes with an empty roster" do
@@ -102,8 +106,7 @@ describe Slanger::Presence::RosterRemoval do
       #N1 = node_id, S1, S2 etc = subscription_id
       {"N1" => {"S1" => user_1, "S2" => user_1},
        "N2" => {"S4" => user_1, "S5" => user_1, "S7" => user_2},
-       "N3" => {"S3" => user_2, "S6" => user_2},
-       "N2" => {"S2" => "user_1"}
+       "N3" => {"S3" => user_2, "S6" => user_2}
       }
     end
     before do
@@ -117,7 +120,7 @@ describe Slanger::Presence::RosterRemoval do
 
     after do
       #sanity check
-      expect(roster.internal_roster).to eq Slanger::RedisRoster.fetch(channel_id)
+      expect(roster.internal_roster).to eq Slanger::RedisRoster.new(channel_id).internal_roster
     end
 
 

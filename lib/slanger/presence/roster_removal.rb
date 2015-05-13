@@ -2,7 +2,7 @@ module Slanger
   module Presence
     module RosterRemoval
       def remove(node_id, subscription_id, &blk)
-        params = Params.new(channel_id, node_id, subscription_id)
+        params = RosterParams.new(channel_id, node_id, subscription_id)
         Slanger.debug "removing from redis #{params.full}"
 
         Slanger::Redis.hdel(params.node_key, subscription_id).
@@ -37,6 +37,10 @@ module Slanger
           if user_in_roster?(user)
             blk.call
           else
+            if user
+              @user_mapping.delete(user["user_id"])
+            end
+
             Slanger::Redis.srem(params.channel_key, user.to_json) do
               blk.call
             end
@@ -52,18 +56,19 @@ module Slanger
         end
       end
 
-      class Params < Struct.new :channel_id, :node_id, :subscription_id
-        def channel_key
-          "slanger-roster-#{channel_id}"
-        end
+    end
 
-        def node_key
-          "#{channel_key}-node-#{node_id}"
-        end
+    class RosterParams < Struct.new :channel_id, :node_id, :subscription_id
+      def channel_key
+        "slanger-roster-#{channel_id}"
+      end
 
-        def full
-           "#{node_key} subscription-id: #{subscription_id}"
-        end
+      def node_key
+        "#{channel_key}-node-#{node_id}"
+      end
+
+      def full
+        "#{node_key} subscription-id: #{subscription_id}"
       end
     end
   end

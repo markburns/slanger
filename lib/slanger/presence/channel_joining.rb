@@ -2,22 +2,25 @@ module Slanger
   module Presence
     module ChannelJoining
       def join(msg, &blk)
-        channel_data = JSON.parse msg['data']['channel_data']
+        member = JSON.parse msg['data']['channel_data']
         public_subscription_id = RandomSubscriptionId.next
 
         # Send event about the new subscription to the Redis slanger:connection_notification Channel.
         status_change = update_slanger_nodes_about_presence_change(
-          node_id: Slanger::Service.node_id,
           subscription_id: public_subscription_id,
           online: true,
-          channel_data: channel_data,
+          channel_data: member,
           channel: channel_id
         )
 
         online_callback = online_callback_from(status_change, public_subscription_id, &blk)
 
         # Associate the subscription data to the public id in Redis.
-        roster.add(Slanger::Service.node_id, public_subscription_id, channel_data, online_callback)
+        roster.add(Slanger::Service.node_id, public_subscription_id, member, online_callback) do |added|
+          if added
+            push payload('pusher_internal:member_added', member)
+          end
+        end
 
         public_subscription_id
       end

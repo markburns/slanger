@@ -9,7 +9,7 @@ describe Slanger::RedisRoster do
 
 
     before do
-      expect(Slanger::Service).to receive(:present_node_ids).and_return ["N1", "N2"]
+      allow(Slanger::Service).to receive(:present_node_ids).and_return ["N1", "N2"]
       redis = ::Redis.new url: Slanger::Config.redis_address
 
       key = "slanger-roster-presence-abcd"
@@ -20,15 +20,26 @@ describe Slanger::RedisRoster do
       redis.hset "#{key}-node-N2", "S4", "U1"
     end
 
-    it do
-      result = redis_roster.fetch
+    describe "fetching internal roster" do
+      it do
+        result = redis_roster.internal_roster
 
 
-      expect(result).to eq ({
-        "N1"=>{"S1"=>user_1, "S3"=>user_2},
-        "N2"=>{"S4" =>user_1}
-      }
-      )
+        expect(result).to eq ({
+          "N1"=>{"S1"=>user_1, "S3"=>user_2},
+          "N2"=>{"S4" =>user_1}
+        }
+                             )
+      end
+    end
+
+    describe "fetching user mapping" do
+      it do
+        user_mapping = redis_roster.user_mapping
+
+
+        expect(user_mapping).to eq ({"U1"=>{}, "U2"=>{"something" => "here"}})
+      end
     end
   end
 end

@@ -1,21 +1,18 @@
 module Slanger
   class RedisRoster
-    def self.fetch(channel_id)
-      new(channel_id).fetch
-    end
-
     def initialize(channel_id)
       @channel_id= channel_id
     end
 
     attr_reader :channel_id
 
-    def fetch
-      redis = Slanger::Redis.sync_redis_connection
+    def user_mapping
+      users.each_with_object({}) do |u, users|
+        users[u["user_id"]] = u["user_info"]
+      end
+    end
 
-      users = redis.smembers "slanger-roster-#{channel_id}"
-      users = users.map{|m| JSON.parse(m)}
-
+    def internal_roster
       node_ids = Slanger::Service.present_node_ids
 
       node_ids.each_with_object({}) do |node_id, roster|
@@ -26,10 +23,21 @@ module Slanger
           roster[node_id][subscription_id] = users.find{|u| u["user_id"] == user_id }
         end
       end
-
     end
 
     private
+
+    def users
+      @users ||=
+        begin
+          users = redis.smembers "slanger-roster-#{channel_id}"
+          users.map{|m| JSON.parse(m)}
+        end
+    end
+
+    def redis
+      @redis ||= Slanger::Redis.sync_redis_connection
+    end
 
     def redis_to_hash(array)
       array.each_slice(2).to_a.each_with_object({}) do |(k,v), result|

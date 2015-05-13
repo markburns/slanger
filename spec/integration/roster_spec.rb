@@ -47,7 +47,7 @@ describe "PresenceChannel Roster" do
       end
     end
 
-    it "updates the internal rosters correctly for each node" do
+    pending "updates the internal rosters correctly for each node" do
       messages_1, messages_2 = [], []
       ws_1 = nil
       ws_2 = nil

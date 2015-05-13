@@ -1,13 +1,15 @@
 module Slanger
   module Presence
     class Roster
-      attr_reader :channel_id, :internal_roster
+      attr_reader :channel_id, :internal_roster, :user_mapping
       include RosterAddition
       include RosterRemoval
 
       def initialize(channel_id)
         @channel_id = channel_id
-        @internal_roster = Slanger::RedisRoster.fetch(channel_id)
+        redis_roster = Slanger::RedisRoster.new(channel_id)
+        @internal_roster = redis_roster.internal_roster
+        @user_mapping    = redis_roster.user_mapping
       end
 
       def present?(member)
@@ -23,7 +25,7 @@ module Slanger
       end
 
       def subscribers
-        Hash[@internal_roster.keys.map { |v| [v['user_id'], v['user_info']] }]
+        @user_mapping
       end
     end
   end

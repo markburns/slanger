@@ -7,69 +7,147 @@ describe Slanger::Presence::RosterAddition do
 
   before do
     allow(Slanger).to receive(:node_id).and_return "N1"
+    allow(Slanger::Service).to receive(:present_node_ids).and_return ["N1", "N2", "N3"]
 
-    #smembers presence-abcd  => [{user-1}, {user-2}, ...]
-    allow(Slanger::Redis).to receive(:smembers).
-      with(channel_id).
-      and_return([
-        user_1.to_s,
-        user_2.to_s,
-      ])
   end
 
-  let(:user_1) { {"user_id" => "1", "user_info" => {}} }
-  let(:user_2) { {"user_id" => "2", "user_info" => {"something" =>"here"}} }
-
-  let(:subscriptions_1) do
-    { "N1" => ["S1"],
-      "N2" => ["S2"] }
-  end
-
-  let(:subscriptions_2) do
-    { "N3" => ["S3", "S4"],
-      "N2" => ["S5"] }
-  end
-
-  {{"user_id"=>"1", "user_info"=>{}}=>{
-    "N1"=>["S1"],
-    "N2"=>["S2"]},
-
-  {"user_id"=>"2", "user_info"=>{"something"=>"here"}}=>{
-    "N3"=>["S3", "S4"],
-    "N2"=>["S5"]}}
+  let(:user_1) { {"user_id" => "U1", "user_info" => {}} }
+  let(:user_2) { {"user_id" => "U2", "user_info" => {"something" =>"here"}} }
 
   describe "#add" do
+    let(:redis) { Redis.new }
+    let(:key) { "slanger-roster-presence-abcd" }
+
+    def setup_test_data!
+      internal_roster.each do |node, subscriptions|
+        subscriptions.each do |s, user|
+          redis.sadd key, user.to_json
+        end
+
+        subscriptions.each do |subscription_id, user|
+          redis.hset "#{key}-node-#{node}", subscription_id, user["user_id"]
+        end
+
+      end
+    end
+
     before do
+      setup_test_data!
+    end
+    let(:internal_roster) do
+      #N1 = node_id, S1, S2 etc = subscription_id
+      {"N1" => {"S2" => user_1},
+       "N2" => {"S4" => user_1, "S5" => user_1, "S7" => user_2},
+       "N3" => {"S3" => user_2, "S6" => user_2}
+      }
     end
 
-    let(:callback) { double "callback", call: nil }
+    let(:callback) { ->{ EM.stop }}
 
-    it "calls the callback" do
-      expect(callback).to receive :call
-      roster.add("N1", "S1234", user_1, callback)
+    context do
+      before do
+        EM.run do
+          roster.add("N1", "S1", user_1, callback)
+        end
+      end
+
+      it "adds values to the internal roster" do
+        expect(roster.internal_roster["N1"]["S1"]).to eq "U1"
+      end
+
+      it "adds to redis" do
+        expect(redis.smembers key).to contain_exactly user_1.to_json, user_2.to_json
+      end
     end
 
-    it "adds values to the internal roster" do
-      roster.add("N1", "S1234", user_1, callback)
-      expect(roster.internal_roster[user_1]["N1"]).to include "S1234"
+    context "updating the user_mapping" do
+      context "when adding" do
+        let(:user_mapping) do
+          {"U1" => {}}
+        end
+
+        let(:internal_roster) do
+          {"N1" => {"S1" => user_1}}
+        end
+
+        it "doesn't change if user already present" do
+          EM.run do
+            roster.add("N2", "S2", user_1, callback)
+          end
+
+          expect(roster.user_mapping).to eq user_mapping
+        end
+
+        it "adds to the mapping change if user not present" do
+          EM.run do
+            roster.add("N2", "S2", user_2, callback)
+          end
+
+          expect(roster.user_mapping).to eq({"U1" => {}, "U2" => {"something" => "here"}})
+        end
+      end
+
+      context "when removing" do
+        let(:user_mapping) do
+          {"U1" => {}}
+        end
+
+        let(:internal_roster) do
+          {"N1" => {"S1" => user_1}}
+        end
+
+        it "doesn't change if user not present" do
+          EM.run do
+            roster.remove("N2", "S2", &callback)
+          end
+
+          expect(roster.user_mapping).to eq user_mapping
+        end
+
+        it "remove from the mapping change if user is present" do
+          EM.run do
+            roster.remove("N1", "S1", &callback)
+          end
+
+          expect(roster.user_mapping).to eq({})
+        end
+      end
     end
 
-    it "adds to redis" do
-      # member-added case
-      # SADD presence-abcd {user-1}
-      #   return value 1 => trigger member_added
-      #   return value 0 => no-op
-      # SADD slanger-roster-presence-abcd-user-1-N1 Sid
-      #presence-channel-user-1 N1 => [S1, S2]
-      expect(Slanger::Redis).to receive(:sadd).
-        with("presence-abcd", user_1)
+    context "user is already present somewhere in the roster" do
+      let(:internal_roster) do
+        {"N2" => {"S2" => user_1}}
+      end
 
-      expect(Slanger::Redis).to receive(:sadd).
-        with("slanger-roster-presence-abcd-user-1", "S1234")
+      it "yields false to the block (i.e. not added)" do
+        EM.run do
+          roster.add("N1", "S1", user_1, callback) do |value|
+            @was_called = true
+            expect(value).to be false
+          end
+        end
 
-      roster.add("N1", "S1234", user_1, callback)
-
+        expect(@was_called).to eq true
+      end
     end
+
+    context "user is not present" do
+      let(:internal_roster) do
+        {}
+      end
+
+      it "yields true to the block (i.e. not added)" do
+        EM.run do
+          roster.add("N1", "S1", user_1, callback) do |value|
+            @was_called = true
+            expect(value).to be true
+          end
+        end
+
+        expect(@was_called).to eq true
+      end
+    end
+
   end
 
 end
