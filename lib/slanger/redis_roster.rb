@@ -20,7 +20,7 @@ module Slanger
 
         subscriptions.each do |subscription_id, user_id|
           roster[node_id] ||= {}
-          roster[node_id][subscription_id] = users.find{|u| u["user_id"] == user_id }
+          roster[node_id][subscription_id] =  user_id 
         end
       end
     end
@@ -31,7 +31,7 @@ module Slanger
       @users ||=
         begin
           users = redis.smembers "slanger-roster-#{channel_id}"
-          users.map{|m| JSON.parse(m)}
+          users.map{|m| attrs = JSON.parse(m); attrs["user_info"]||={}; attrs}
         end
     end
 

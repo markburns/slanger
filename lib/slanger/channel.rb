@@ -50,7 +50,14 @@ module Slanger
 
     def join(*a, &blk)
       change_subscriber_count "subscribe", +1, *a, &blk
-      SecureRandom.uuid
+
+      RandomSubscriptionId.next
+    end
+
+    class RandomSubscriptionId
+      def self.next
+        SecureRandom.uuid
+      end
     end
 
     def leave *a, &blk

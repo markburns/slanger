@@ -5,6 +5,7 @@ module Slanger
         super(*args)
 
         validate!
+
         authenticate!
         parse_body!
       end
@@ -36,7 +37,14 @@ module Slanger
       private
 
       def validate_body!
-        @body ||= assert_valid_json!(raw_body.tap{ |s| s.force_encoding('utf-8')})
+        @body ||= begin
+                    body = raw_body.to_s.tap{ |s| s.force_encoding('utf-8')}
+                    if body.present?
+                      assert_valid_json!(body)
+                    else
+                      ""
+                    end
+                  end
       end
 
       def validate!

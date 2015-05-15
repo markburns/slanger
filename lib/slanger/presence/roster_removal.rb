@@ -33,13 +33,15 @@ module Slanger
 
       def removal_success(params, &blk)
         Proc.new do |res|
-          user = remove_internal(params)
-          if user_in_roster?(user)
+          user_id = remove_internal(params)
+
+          if user_in_roster?(user_id)
             blk.call
           else
-            @user_mapping.delete(user["user_id"]) rescue nil
+            user_info = @user_mapping.delete(user_id)
+            user = {"user_id" => user_id, "user_info" => user_info}.to_json
 
-            Slanger::Redis.srem(params.channel_key, user.to_json) do
+            Slanger::Redis.srem(params.channel_key, user) do
               blk.call
             end
           end

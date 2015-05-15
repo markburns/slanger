@@ -20,7 +20,8 @@ module Slanger
       error(Slanger::Api::InvalidRequest)   { |c| halt 400, "400 Bad Request" }
 
       before do
-        valid_request
+        #skip healthcheck / 404 page etc
+        valid_request if env["PATH_INFO"] =~ /\Aapps/
       end
 
       post '/apps/:app_id/events' do

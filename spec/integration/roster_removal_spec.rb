@@ -9,7 +9,7 @@ describe Slanger::Presence::RosterRemoval do
     #
     #
     #slanger-presence-abcd
-    #{user_id: "U1", user_info: {name: "mark", surname: "burns"}} 
+    #{user_id: "U1", user_info: {name: "mark", surname: "burns"}}
     #
     #hash:  slanger-presence-P1-node-N1
     #key:   S1
@@ -17,6 +17,20 @@ describe Slanger::Presence::RosterRemoval do
     #
 
   end
+
+  def internal_roster
+    internal_roster = {}
+
+    roster_data.each do |node, subscriptions|
+      internal_roster[node] = {}
+      subscriptions.each do |s, user|
+        internal_roster[node][s] = user["user_id"]
+      end
+    end
+
+    internal_roster
+  end
+
 
   def set_internal(internal, user_mapping={})
     redis_roster = double "redis roster"
@@ -53,21 +67,21 @@ describe Slanger::Presence::RosterRemoval do
     end
 
     it "removes from the internal roster" do
-      internal = {"N1" => {"S1"=>user_1, "S2"=> user_2}}
+      internal = {"N1" => {"S1"=>"U1", "S2"=> "U2"}}
       set_internal(internal)
 
       roster.remove_internal(params)
-      expect(roster.internal_roster).to eq({"N1"=> {"S2" => user_2}})
+      expect(roster.internal_roster).to eq({"N1"=> {"S2" => "U2"}})
     end
   end
 
   let(:redis) { ::Redis.new url: Slanger::Config.redis_address }
   let(:key) { "slanger-roster-presence-abcd" }
-  let(:user_1) { {"user_id" => "U1"} }
-  let(:user_2) { {"user_id" => "U2"} }
+  let(:user_1) { {"user_id" => "U1", "user_info" => {"some kind of" => "attribute"}} }
+  let(:user_2) { {"user_id" => "U2", "user_info" => {"name"         => "arbitrary"}} }
 
   def setup_test_data!
-    internal_roster.each do |node, subscriptions|
+    roster_data.each do |node, subscriptions|
       subscriptions.each do |s, user|
         redis.sadd key, user.to_json
       end
@@ -89,7 +103,7 @@ describe Slanger::Presence::RosterRemoval do
       setup_test_data!
     end
 
-    let(:internal_roster) do
+    let(:roster_data) do
       {"N1" => {"S1" => user_1, "S3" => user_2},
        "N2" => {"S2" => user_1, "S4" => user_2, "S5" => user_1},
        "N3" => {"S7" => user_1, "S8" => user_2, "S9" => user_1}
@@ -101,17 +115,34 @@ describe Slanger::Presence::RosterRemoval do
     end
   end
 
+  describe "#user_mapping" do
+    before do
+      setup_test_data!
+    end
+
+    let(:roster_data) do
+      {"N1" => {"S1" => user_1, "S3" => user_2},
+       "N2" => {"S2" => user_1, "S4" => user_2, "S5" => user_1},
+       "N3" => {"S7" => user_1, "S8" => user_2, "S9" => user_1}
+      }
+    end
+
+    it do
+      expect(roster.user_mapping).to eq({"U1" => user_1["user_info"], "U2" => user_2["user_info"]})
+    end
+  end
+
   describe "#remove" do
-    let(:internal_roster) do
+    let(:roster_data) do
       #N1 = node_id, S1, S2 etc = subscription_id
       {"N1" => {"S1" => user_1, "S2" => user_1},
        "N2" => {"S4" => user_1, "S5" => user_1, "S7" => user_2},
        "N3" => {"S3" => user_2, "S6" => user_2}
       }
     end
+
     before do
       setup_test_data!
-
 
       EM.run do
         roster.remove(node_to_delete_from, subscription_id_to_delete, &callback)
@@ -129,7 +160,7 @@ describe Slanger::Presence::RosterRemoval do
     let(:subscription_id_to_delete) { "S1" }
     let(:node_to_delete_from) { "N1" }
     context "with the last subscription for this node" do
-      let(:internal_roster) do
+      let(:roster_data) do
         {"N1" => {"S1" => user_1},
          "N2" => {"S2" => user_1}
         }
@@ -141,24 +172,24 @@ describe Slanger::Presence::RosterRemoval do
     end
 
     context "with other subscriptions for this node" do
-      let(:internal_roster) do
+      let(:roster_data) do
         {"N1" => {"S1" => user_1, "S2" => user_1} }
       end
 
       it "only deletes the specific subscription entry" do
-        expect(roster.internal_roster["N1"]).to eq({"S2" => user_1})
+        expect(roster.internal_roster["N1"]).to eq({"S2" => "U1"})
       end
     end
 
     context "with no other nodes or subscriptions for this user" do
-      let(:internal_roster) do
+      let(:roster_data) do
         {"N1" => {"S1" => user_1},
          "N2" => {"S2" => user_2}
         }
       end
 
       it "deletes from the main presence-channel hash" do
-        expect(roster.internal_roster).to eq({ "N2" => {"S2" => user_2} })
+        expect(roster.internal_roster).to eq({ "N2" => {"S2" => "U2"} })
       end
 
       it "removes the user from the redis presence-channel key" do

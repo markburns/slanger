@@ -49,7 +49,6 @@ module Slanger
       def addition_error(*args)
         Proc.new do |*e|
           Slanger.error "Redis add failed #{e} args: #{args}"
-          #TODO remove
         end
       end
     end

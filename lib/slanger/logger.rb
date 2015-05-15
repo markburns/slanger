@@ -47,7 +47,10 @@ module Slanger
 
     def get_line_summary_from(line)
       path, line_number, _ = line.split(":")
-      filename = Pathname.new(path).each_filename.to_a[-3..-1].join "/" rescue ""
+      filenames = Pathname.new(path).each_filename.to_a
+      lib_index = filenames.each_index.find{|i| filenames[i] == 'lib' && filenames.include?("slanger")} || -3
+      filename = filenames[lib_index..-1].join "/" rescue ""
+
       if filename && filename["slanger/spec"]
         filename.gsub! /\Aslanger\//, ""
       end

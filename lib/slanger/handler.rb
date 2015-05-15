@@ -44,7 +44,7 @@ module Slanger
     end
 
     def onclose
-      Slanger.debug "onclose unsubscribing subscriptions: #{@subscriptions}"
+      Slanger.debug "Node: #{Slanger.node_id} onclose unsubscribing subscriptions: #{@subscriptions}"
 
       @subscriptions.select { |k,v| k && v }.
         each do |channel_id, subscription_id|

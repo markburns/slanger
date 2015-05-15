@@ -4,7 +4,7 @@ module Slanger
       def join(msg, &blk)
         Slanger.debug "Joining channel #{msg}"
         member = JSON.parse msg['data']['channel_data']
-        public_subscription_id = RandomSubscriptionId.next
+        public_subscription_id = super
 
         # Send event about the new subscription to the Redis slanger:connection_notification Channel.
         status_change = update_slanger_nodes_about_presence_change(
@@ -24,12 +24,6 @@ module Slanger
         end
 
         public_subscription_id
-      end
-
-      module RandomSubscriptionId
-        def self.next
-          SecureRandom.uuid
-        end
       end
 
       def online_callback_from(status_change_redis, public_subscription_id, &blk)

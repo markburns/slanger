@@ -26,8 +26,8 @@ describe Slanger::RedisRoster do
 
 
         expect(result).to eq ({
-          "N1"=>{"S1"=>user_1, "S3"=>user_2},
-          "N2"=>{"S4" =>user_1}
+          "N1"=>{"S1"=>"U1", "S3"=>"U2"},
+          "N2"=>{"S4" =>"U1"}
         }
                              )
       end

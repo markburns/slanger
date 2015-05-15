@@ -53,8 +53,8 @@ module SlangerHelperMethods
   def stop_slanger
     server_pids.each do |pid|
       # Ensure Slanger is properly stopped. No orphaned processes allowed!
-      Process.kill 'SIGKILL', pid
-      Process.wait pid
+      Process.kill 'SIGKILL', pid rescue nil
+      Process.wait pid rescue nil
     end
   end
 
@@ -113,7 +113,7 @@ module SlangerHelperMethods
   def em_thread
     EM.run do
 
-      unless @timeout_timer_added
+      unless (ENV["DEBUGGER"] || @timeout_timer_added)
         @timeout_timer_added = true
 
         EM.add_timer 3 do

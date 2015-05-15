@@ -54,6 +54,11 @@ module Slanger
       message = "Invalid signature: Expected HMAC SHA256 hex digest of "
       message << "#{socket_id}:#{channel_id}, but got #{auth}"
 
+      if ENV["DEBUGGER"]
+      #TODO: remove
+        message << "correct signature: #{token(channel_id, data)}"
+      end
+
       error({ message: message})
     end
   end
