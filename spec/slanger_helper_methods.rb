@@ -107,7 +107,7 @@ module SlangerHelperMethods
       end
     end
 
-    return messages
+    messages
   end
 
   def em_thread
@@ -142,25 +142,18 @@ module SlangerHelperMethods
 
   def send_subscribe options
     info      = { user_id: options[:user_id], user_info: { name: options[:name] } }
+    begin
     socket_id = JSON.parse(options[:message]['data'])['socket_id']
+    rescue
+      byebug
+    end
     websocket = options[:user]
 
     subscribe_to_presence_channel(websocket, info, socket_id)
   end
 
-  def send_unsubscribe options
-    info      = { user_id: options[:user_id], user_info: { name: options[:name] } }
-    socket_id = JSON.parse(options[:message]['data'])['socket_id']
-    websocket = options[:user]
-
-    unsubscribe_from_presence_channel(websocket, info, socket_id)
-  end
-
-
   def subscribe_to_presence_channel websocket, user_info, socket_id
-    digest = OpenSSL::Digest::SHA256.new
-    to_sign   = [socket_id, 'presence-channel', user_info.to_json].join ':'
-    auth = [Pusher.key, OpenSSL::HMAC.hexdigest(digest, Pusher.secret, to_sign)].join(':')
+    auth = auth_from(socket_id, "presence-channel", user_info.to_json)
 
     websocket.send({
       event: 'pusher:subscribe',
@@ -172,34 +165,28 @@ module SlangerHelperMethods
     }.to_json)
   end
 
-  def unsubscribe_from_presence_channel websocket, user_info, socket_id
-    digest = OpenSSL::Digest::SHA256.new
-    to_sign   = [socket_id, 'presence-channel', user_info.to_json].join ':'
-    auth = [Pusher.key, OpenSSL::HMAC.hexdigest(digest, Pusher.secret, to_sign)].join(':')
-
-    websocket.send({
-      event: 'pusher:unsubscribe',
-      data: {
-        auth: auth,
-        channel_data: user_info.to_json,
-        channel: 'presence-channel'
-      }
-    }.to_json)
-  end
-
-  def private_channel websocket, message
+  def private_channel websocket, message, channel="channel"
+    channel = "private-#{channel}"
     socket_id = JSON.parse(message['data'])['socket_id']
-    to_sign   = [socket_id, 'private-channel'].join ':'
 
-    digest = OpenSSL::Digest::SHA256.new
+    auth = auth_from(socket_id, channel)
 
     websocket.send({
       event: 'pusher:subscribe',
       data: {
-        auth: [Pusher.key, OpenSSL::HMAC.hexdigest(digest, Pusher.secret, to_sign)].join(':'),
-        channel: 'private-channel'
+        auth: auth,
+        channel: channel
       }
     }.to_json)
+  end
 
+  private
+
+  def auth_from(socket_id, channel, channel_data=nil)
+    to_sign   = [socket_id, channel, channel_data].compact.join ':'
+
+    digest = OpenSSL::Digest::SHA256.new
+
+    [Pusher.key, OpenSSL::HMAC.hexdigest(digest, Pusher.secret, to_sign)].join(':')
   end
 end

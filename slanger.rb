@@ -23,5 +23,6 @@ File.tap do |f|
 
   auto.(Slanger)
   auto.(Slanger::Presence, "presence")
-  auto.(Slanger::Api, "api")
+  auto.(Slanger::Api,      "api"     )
+  auto.(Slanger::Janitor, "janitor"  )
 end

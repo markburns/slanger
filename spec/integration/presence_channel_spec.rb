@@ -84,7 +84,7 @@ describe 'Integration' do
             end
           end
 
-          expect(messages).to have_attributes connection_established: true, count: 2
+          expect(messages).to have_attributes connection_established: true, count: 4
 
           data = {"presence"=>{"count"=>1,
                                "ids"=>["0f177369a3b71275d25ab1b44db9f95f"],
@@ -181,17 +181,20 @@ describe 'Integration' do
                       send_subscribe({ user: u,
                                        user_id: '37960509766262569d504f02a0ee986d',
                                        name: 'CHROME',
-                                       message: JSON.parse(message)})
+                                       message: messages.first})
                     end
                   end
                 end
-              when 4
+              when 6
                 EM.stop
               end
 
             end
 
             # There should only be one set of presence messages sent to the reference user for the second user.
+
+
+            byebug
             added   = messages.select {|m| m['event'] == 'pusher_internal:member_added'   && m['data']['user_id'] == '37960509766262569d504f02a0ee986d' }
             expect(added.length).to eq 1
           end

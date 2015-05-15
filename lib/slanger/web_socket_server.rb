@@ -9,11 +9,15 @@ module Slanger
       Slanger.debug "Websocket server run: #{options}"
 
       EM.run do
-       # Also subscribe the slanger daemon to a Redis channel used for events concerning subscriptions.
-        Slanger::Redis.subscribe 'slanger:connection_notification'
+        unless @first_run
+          @first_run=true
+          # Also subscribe the slanger daemon to a Redis channel used for events concerning subscriptions.
+          Slanger::Redis.subscribe 'slanger:connection_notification'
+          Slanger::Janitor.register_roll_call!
 
-        EM::WebSocket.start options do |ws|
-          attach_handlers ws
+          EM::WebSocket.start options do |ws|
+            attach_handlers ws
+          end
         end
       end
     end
