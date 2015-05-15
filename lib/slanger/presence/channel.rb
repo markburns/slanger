@@ -26,7 +26,7 @@ module Slanger
       def dispatch(message, channel_id)
         Slanger.debug "PresenceChannel dispatch incoming channel_id: #{channel_id} msg: #{message}"
 
-        if channel_id =~ /^slanger:/
+        if channel_id =~ /\Aslanger:/
           # Messages received from the Redis channel slanger:*  carry info on
           # roster. Update our subscribers accordingly.
           handle_slanger_connection_notification message

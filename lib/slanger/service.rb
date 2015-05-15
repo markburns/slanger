@@ -78,7 +78,7 @@ module Slanger
         connection_args = map_options_for_api_server Slanger::Config
 
         Slanger.info "Starting API server #{connection_args}"
-        Rack::Handler::Thin.run Slanger::ApiServer, connection_args
+        Rack::Handler::Thin.run Slanger::Api::Server, connection_args
         Slanger.debug "API server started"
       end
 

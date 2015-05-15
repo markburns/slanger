@@ -2,6 +2,7 @@ module Slanger
   module Presence
     module ChannelJoining
       def join(msg, &blk)
+        Slanger.debug "Joining channel #{msg}"
         member = JSON.parse msg['data']['channel_data']
         public_subscription_id = RandomSubscriptionId.next
 

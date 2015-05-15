@@ -10,3 +10,4 @@
 .idea
 .rbenv-gemsets
 tmp
+coverage/

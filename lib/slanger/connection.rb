@@ -37,18 +37,20 @@ module Slanger
 
     def acknowledge_established
       @socket_id = RandomSocketId.next
+
       Slanger.info "Acknowledging connection established socket_id: #{@socket_id}"
 
       push_payload nil, 'pusher:connection_established', {
         socket_id: @socket_id,
         activity_timeout: Slanger::Config.activity_timeout
       }
+
       @socket_id
     end
 
     class RandomSocketId
       def self.next
-        SecureRandom.uuid
+        "%d.%d" % [Process.pid, SecureRandom.random_number(10 ** 6)]
       end
     end
 

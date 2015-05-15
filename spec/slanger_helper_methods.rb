@@ -47,7 +47,7 @@ module SlangerHelperMethods
   def start_api_server!(options)
     Thin::Logging.silent = true
     api_server_options = Slanger::Service.map_options_for_api_server options
-    Rack::Handler::Thin.run Slanger::ApiServer, api_server_options
+    Rack::Handler::Thin.run Slanger::Api::Server, api_server_options
   end
 
   def stop_slanger
@@ -112,7 +112,21 @@ module SlangerHelperMethods
 
   def em_thread
     EM.run do
+
+      unless @timeout_timer_added
+        @timeout_timer_added = true
+
+        EM.add_timer 3 do
+          stop_slanger
+          EM.stop
+
+          raise Exception.new "Test timed out"
+        end
+      end
+
       yield
+
+
     end
   end
 

@@ -31,7 +31,6 @@ Gem::Specification.new do |s|
   s.add_development_dependency    'rspec-mocks'
   s.add_development_dependency    'pretty_backtrace'
   s.add_development_dependency    'byebug'
-  s.add_development_dependency    'pry-byebug'
   s.add_development_dependency    'pusher',           '~> 0.14.2'
   s.add_development_dependency    'haml',             '~> 3.1.2'
   s.add_development_dependency    'rake'
@@ -40,6 +39,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency    'mocha',            '~> 1.1.0'
   s.add_development_dependency    'pry',              '~> 0.10.1'
   s.add_development_dependency    'em-spec'
+  s.add_development_dependency    'pry-byebug',       '~> 2.0.0'
 
   s.files                       = Dir['README.md', 'lib/**/*', 'slanger.rb']
   s.require_path                = '.'

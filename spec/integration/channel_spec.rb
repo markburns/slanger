@@ -35,7 +35,7 @@ describe 'Integration:' do
         end
      end
 
-      messages.should have_attributes connection_established: true, id_present: true,
+      expect(messages).to have_attributes connection_established: true, id_present: true,
         last_event: 'not_excluded_socket_event', last_data: { some: "Mit Raben Und Wölfen" }.to_json
     end
 
@@ -95,16 +95,17 @@ describe 'Integration:' do
             when 1
               client2.callback { client2.send({ event: 'pusher:subscribe', data: { channel: 'MY_CHANNEL'} }.to_json) }
             when 2
-              socket_id = client1_messages.first['data']['socket_id']
+              socket_id = JSON.parse(client1_messages.first['data'])['socket_id']
               Pusher['MY_CHANNEL'].trigger 'an_event', { some: 'data' }, socket_id
             when 3
-              EM.next_tick { EM.stop }
+              EM.stop
             end
           end
         end
       end
 
-      expect(client1_messages).to have_attributes count: 3
+      expect(client1_messages.select{|m| m["event"]=="an_event"}.length ).to eq 0
+      expect(client2_messages.select{|m| m["event"]=="an_event"}.length ).to eq 1
 
       expect(client2_messages).to have_attributes last_event: 'an_event',
                                               last_data: { some: 'data' }.to_json

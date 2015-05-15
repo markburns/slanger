@@ -28,9 +28,9 @@ module Slanger
 
       msg['data'] = JSON.parse(msg['data']) if msg['data'].is_a? String
 
-      event = msg['event'].gsub(/^pusher:/, 'pusher_')
+      event = msg['event'].gsub(/\Apusher:/, 'pusher_')
 
-      if event =~ /^client-/
+      if event =~ /\Aclient-/
         msg['socket_id'] = connection.socket_id
         Channel.send_client_message msg
       elsif respond_to? event, true
@@ -121,14 +121,13 @@ module Slanger
 
     def subscription_klass channel_id
       klass = case channel_id
-      when /private-/
+      when /\Aprivate-/
         Slanger::PrivateSubscription
-      when /presence-/
+      when /\Apresence-/
         Slanger::Presence::Subscription
       else
         Slanger::Subscription
       end
-
     end
   end
 end

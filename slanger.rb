@@ -15,11 +15,13 @@ EM.epoll
 EM.kqueue
 
 File.tap do |f|
-  Dir[f.expand_path(f.join(f.dirname(__FILE__),'lib', 'slanger', '*.rb'))].each do |file|
-    Slanger.autoload File.basename(file, '.rb').camelize, file
-  end
+  auto = ->(constant, *path) {
+    Dir[f.expand_path(f.join(f.dirname(__FILE__),'lib', 'slanger', *path, '*.rb'))].each do |file|
+      constant.autoload File.basename(file, '.rb').camelize, file
+    end
+  }
 
-  Dir[f.expand_path(f.join(f.dirname(__FILE__),'lib', 'slanger', "presence", '*.rb'))].each do |file|
-    Slanger::Presence.autoload File.basename(file, '.rb').camelize, file
-  end
+  auto.(Slanger)
+  auto.(Slanger::Presence, "presence")
+  auto.(Slanger::Api, "api")
 end

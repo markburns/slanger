@@ -14,7 +14,7 @@ module Slanger
 
     class << self
       def from channel_id
-        klass = channel_id[/^presence-/] ? Presence::Channel : Channel
+        klass = channel_id[/\Apresence-/] ? Presence::Channel : Channel
 
         klass.all[channel_id] ||= klass.new(channel_id)
       end
@@ -96,7 +96,7 @@ module Slanger
     # Send an event received from Redis to the EventMachine channel
     # which will send it to subscribed clients.
     def dispatch(message, channel_id)
-      if channel_id =~ /^slanger:/
+      if channel_id =~ /\Aslanger:/
         Slanger.debug "Not dispatching slanger message for channel_id: #{channel_id} message: #{message}"
       else
         Slanger.debug "Channel#dispatch: Push message to em_channel channel_id: #{channel_id} message: #{message}"
@@ -105,7 +105,7 @@ module Slanger
     end
 
     def authenticated?
-      channel_id =~ /^private-/ || channel_id =~ /^presence-/
+      channel_id =~ /\Aprivate-/ || channel_id =~ /\Apresence-/
     end
   end
 end
