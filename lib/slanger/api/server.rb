@@ -21,28 +21,32 @@ module Slanger
 
       before do
         #skip healthcheck / 404 page etc
-        valid_request if env["PATH_INFO"] =~ /\Aapps/
+        if env["PATH_INFO"] =~ /\Aapps/
+          valid_request
+          status 202
+        end
       end
 
       post '/apps/:app_id/events' do
-        socket_id = valid_request.socket_id
-        body = valid_request.body
+        valid_request.tap do |r|
+          EventPublisher.publish(r.channels,
+                                 r.body["name"],
+                                 r.body["data"],
+                                 r.socket_id)
+        end
 
-        event = Slanger::Api::Event.new(body["name"], body["data"], socket_id)
-        EventPublisher.publish(valid_request.channels, event)
-
-        status 202
-        return {}.to_json
+        {}.to_json
       end
 
       post '/apps/:app_id/channels/:channel_id/events' do
-        params = valid_request.params
+        valid_request.tap do |r|
+          EventPublisher.publish(r.channels,
+                                 r.params["name"],
+                                 r.body,
+                                 r.socket_id)
+        end
 
-        event = Event.new(params["name"], valid_request.body, valid_request.socket_id)
-        EventPublisher.publish(valid_request.channels, event)
-
-        status 202
-        return {}.to_json
+        {}.to_json
       end
 
       def valid_request
