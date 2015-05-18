@@ -51,8 +51,28 @@ describe "PresenceChannel Roster" do
       ws_1 = nil
       ws_2 = nil
 
-      user = {user_id: '0f177369a3b71275d25ab1b44db9f95f', name: 'MB'}
+      user = {user_id: '0f177369a3b71275d25ab1b44db9f95f', user_info: {name: 'MB'}}
 
+      # Timeline representation
+      # ws_1 connect (node 1)                  ws_2 connect (node 2)
+      # |                                      |
+      # v                                      v
+      # connection_established                 |
+      # |                                      subscribe to presence
+      # v                                      socket 2.1
+      # subscribe to presence_channel          |
+      # socket 1.1                             |
+      # |                                      |
+      # v                                      presence acknowledgement
+      # presence acknowledgement               |
+      # |                                      |
+      # check roster state                     v
+      # |                                      |
+      # |                                      close ws_2
+      # |
+      # check roster state
+      #
+      #
       em_thread do
         ws_1 = new_websocket
 
@@ -63,18 +83,25 @@ describe "PresenceChannel Roster" do
               subscribe_to_presence_channel(ws_1, user, "1.1")
               @subscribed_ws_1 = true
 
-            EM.add_periodic_timer(0.3) do
-              if messages_2.length == 2
-                #we can't check the roster status after EM.stop as it
-                #closes the websockets and removes the members
-                expect(Slanger::Presence::Roster.new("presence-channel").internal_roster).to eq({
-                  "1" =>{"S1" => user[:user_id]},
-                  "2" =>{"S2" => user[:user_id]}
-                })
+              EM.add_periodic_timer(0.5) do
+                if @subscribed_ws_2 && !@closing_ws_2 && !@closed_ws_2
+                  #we can't check the roster status after EM.stop as it
+                  #closes the websockets and removes the members
+                  expect(Slanger::Presence::Roster.new("presence-channel").internal_roster).to eq({
+                    "1" =>{"S1" => user[:user_id]},
+                    "2" =>{"S2" => user[:user_id]}
+                  })
 
-                EM.stop
+                  Slanger.error "unbinding ws_2"
+                  ws_2.close_connection
+                  @closing_ws_2 = true
+                  #give socket time to close
+                  EM.add_timer 0.5 do
+                    Slanger.error "timer closed_ws_2"
+                    @closed_ws_2 = true
+                  end
+                end
               end
-            end
             end
           end
         end
@@ -85,18 +112,26 @@ describe "PresenceChannel Roster" do
           unless @subscribed_ws_2
             EM.add_periodic_timer(0.3) do
               unless @subscribed_ws_2
-                if messages_1.length == 1 && messages_2.length == 1
-                  subscribe_to_presence_channel(ws_2, user, "2.1")
+                if messages_1.length >= 1 && messages_2.length >= 1
                   @subscribed_ws_2 = true
+                  subscribe_to_presence_channel(ws_2, user, "2.1")
                 end
               end
             end
           end
         end
 
-     end
+        EM.add_periodic_timer(0.3) do
+          if @closed_ws_2
+            Slanger.error "periodic timer closed_ws_2"
+            expect(Slanger::Presence::Roster.new("presence-channel").internal_roster).to eq({
+              "1" =>{"S1" => user[:user_id]}
+            })
 
-
+            EM.stop
+          end
+        end
+      end
     end
   end
 end
