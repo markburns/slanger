@@ -50,8 +50,8 @@ module SlangerHelperMethods
     Rack::Handler::Thin.run Slanger::Api::Server, api_server_options
   end
 
-  def stop_slanger
-    server_pids.each do |pid|
+  def stop_slanger(pids=server_pids)
+    pids.each do |pid|
       # Ensure Slanger is properly stopped. No orphaned processes allowed!
       Process.kill 'SIGKILL', pid rescue nil
       Process.wait pid rescue nil
@@ -66,7 +66,7 @@ module SlangerHelperMethods
 
   def wait_for_socket(port)
     retry_count = 100
-    puts "Waiting for slanger on port #{port}..."
+    puts "Waiting for response on port #{port}..."
     begin
       TCPSocket.new('0.0.0.0', port).close
     rescue
@@ -142,11 +142,8 @@ module SlangerHelperMethods
 
   def send_subscribe options
     info      = { user_id: options[:user_id], user_info: { name: options[:name] } }
-    begin
     socket_id = JSON.parse(options[:message]['data'])['socket_id']
-    rescue
-      byebug
-    end
+
     websocket = options[:user]
 
     subscribe_to_presence_channel(websocket, info, socket_id)

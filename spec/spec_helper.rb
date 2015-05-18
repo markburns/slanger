@@ -13,6 +13,8 @@ require 'socket'
 require 'timecop'
 require 'pry'
 require 'webmock/rspec'
+require 'httparty'
+
 require 'slanger'
 
 

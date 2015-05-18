@@ -23,33 +23,70 @@ describe "Janitor" do
     wait_for_socket(4567)
   end
 
-  describe Slanger::WebSocketServer do
-    it "responds to a roll-call-request message"do
-      messages = []
+  def run_roll_call!(expected_message_count: 2, stop_on_message_count_reached: true)
+    messages = []
+    first_run=true
 
-      EM.run do
-        unless @first_run
-          @first_run = true
-          Slanger::Janitor.register_roll_call! do |msg|
-            Slanger.error "SPEC Message received #{msg}"
-            messages << JSON.parse(msg)
+    EM.run do
+      Slanger::Janitor.register_roll_call!(silent_listener: true) do |msg|
+        messages << msg unless msg["type"]=="request"
 
-            if messages.length == 2
-              EM.stop
-            end
-          end
-
-          Slanger::Janitor.request 
+        if messages.length == expected_message_count && stop_on_message_count_reached
+          EM.stop
         end
       end
+
+      Slanger::Janitor.request!
+    end
+
+    messages
+  end
+
+  describe Slanger::WebSocketServer do
+    it "responds to a roll-call-request message"do
+      messages = run_roll_call!
+
       expect(messages.length). to eq 2
       a,b = messages
-      expect(a["node_id"]).to eq 1
-      expect(b["node_id"]).to eq 2
+      expect([a["node_id"], b["node_id"]]).to contain_exactly 1,2
       expect(a["pid"]).to be > 0
       expect(b["pid"]).to be > 0
     end
   end
+
+  describe Slanger::Janitor do
+    it "updates the present node ids in redis" do
+      messages = run_roll_call!
+      expect(messages.length). to eq 2
+
+      expect(Slanger::Service.present_node_ids).to contain_exactly "1", "2"
+    end
+
+    it "removes stopped nodes" do
+      messages = run_roll_call!(expected_message_count: 2)
+      expect(messages.length). to eq 2
+
+      stop_slanger [server_pids[1]]
+
+      expect(Slanger::Service.present_node_ids).to contain_exactly "1", "2"
+
+      first_run = true
+      EM.run do
+        if first_run
+          first_run=false
+          Slanger::Janitor.em_channel.subscribe do |msg|
+            expect(msg[:type]).to eq "update"
+            EM.stop
+          end
+
+          run_roll_call!(expected_message_count: 1, stop_on_message_count_reached: false)
+        end
+      end
+
+      expect(Slanger::Service.present_node_ids).to contain_exactly "1"
+    end
+  end
+
 end
 # node-1 offline case
 # keys slanger-roster-presence-*-node-1 each do |key|
