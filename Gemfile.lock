@@ -28,7 +28,6 @@ GEM
       childprocess (>= 0.3.6)
       cucumber (>= 1.1.1)
       rspec-expectations (>= 2.7.0)
-    bacon (1.2.0)
     binding_of_caller (0.7.2)
       debug_inspector (>= 0.0.1)
     builder (3.2.2)
@@ -61,11 +60,6 @@ GEM
       addressable (>= 2.0.0)
       escape_utils
       eventmachine (>= 0.12.9)
-    em-spec (0.2.6)
-      bacon
-      eventmachine
-      rspec (> 2.6.0)
-      test-unit
     em-websocket (0.5.1)
       eventmachine (>= 0.12.9)
       http_parser.rb (~> 0.6.0)
@@ -77,6 +71,9 @@ GEM
     haml (3.1.8)
     hiredis (0.4.5)
     http_parser.rb (0.6.0)
+    httparty (0.13.3)
+      json (~> 1.8)
+      multi_xml (>= 0.5.2)
     httpclient (2.6.0.1)
     i18n (0.7.0)
     json (1.8.2)
@@ -87,7 +84,7 @@ GEM
       metaclass (~> 0.0.1)
     multi_json (1.11.0)
     multi_test (0.1.2)
-    power_assert (0.2.3)
+    multi_xml (0.5.5)
     pretty_backtrace (0.1.2)
       debug_inspector (~> 0.0.1)
     pry (0.10.1)
@@ -127,8 +124,6 @@ GEM
       rack-protection (~> 1.4)
       tilt (>= 1.3, < 3)
     slop (3.6.0)
-    test-unit (3.0.9)
-      power_assert
     thin (1.6.3)
       daemons (~> 1.0, >= 1.0.9)
       eventmachine (~> 1.0)
@@ -150,8 +145,8 @@ DEPENDENCIES
   binding_of_caller
   bundler (~> 1.5)
   byebug
-  em-spec
   haml (~> 3.1.2)
+  httparty
   mocha (~> 1.1.0)
   pretty_backtrace
   pry (~> 0.10.1)

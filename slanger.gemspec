@@ -42,12 +42,12 @@ Gem::Specification.new do |s|
   s.add_development_dependency    "haml",             "~> 3.1.2"
   s.add_development_dependency    "mocha",            "~> 1.1.0"
   s.add_development_dependency    "pry",              "~> 0.10.1"
-  s.add_development_dependency    "em-spec"
   s.add_development_dependency    "pry-byebug",       "~> 2.0.0"
-  s.add_development_dependency    "timecop",          "~> 0.3.5"
   s.add_development_dependency    "webmock",          "~> 1.21.0"
   s.add_development_dependency    "bundler",          "~> 1.5"
   s.add_development_dependency    "rake",             "~> 10.4.2"
+  s.add_development_dependency    'httparty'
+  s.add_development_dependency    'timecop',          '~> 0.3.5'
 
   s.files                       = Dir["README.md", "lib/**/*", "slanger.rb"]
   s.require_path                = "."
