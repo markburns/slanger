@@ -1,7 +1,9 @@
 module Slanger
   module Api
     class EventPublisher < Struct.new(:channels, :event)
-      def self.publish(channels, event)
+      def self.publish(channels, event_name, event_body, socket_id)
+        event = Slanger::Api::Event.new(event_name, event_body, socket_id)
+
         new(channels, event).publish
       end
 

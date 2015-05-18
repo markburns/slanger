@@ -194,7 +194,6 @@ describe 'Integration' do
             # There should only be one set of presence messages sent to the reference user for the second user.
 
 
-            byebug
             added   = messages.select {|m| m['event'] == 'pusher_internal:member_added'   && m['data']['user_id'] == '37960509766262569d504f02a0ee986d' }
             expect(added.length).to eq 1
           end
