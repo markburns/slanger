@@ -1,13 +1,13 @@
 module Slanger
   module Presence
     module RosterAddition
-      def add(node_id, subscription_id, member, on_add_callback=nil, &blk)
+      def add(node_id, subscription_id, member, on_add_callback=nil, &roster_add_block)
         Slanger.debug "Roster adding to redis node_id: #{node_id} subscription_id:#{subscription_id} member: #{member}"
         params = RosterParams.new(channel_id, node_id, subscription_id)
 
         Slanger::Redis.
           sadd(params.channel_key, member.to_json).
-          callback(&main_presence_key_success(params, member, on_add_callback, &blk)).
+          callback(&main_presence_key_success(params, member, on_add_callback, &roster_add_block)).
           errback(&addition_error(params, member: member))
       end
 
@@ -19,7 +19,7 @@ module Slanger
 
       private
 
-      def main_presence_key_success(params, member, on_add_callback, &blk)
+      def main_presence_key_success(params, member, on_add_callback, &roster_add_block)
         Proc.new do |res|
           Slanger.debug "Roster#add successful #{params.full}, member: #{member}"
           user_id = member["user_id"]
@@ -29,11 +29,11 @@ module Slanger
 
           Slanger::Redis.hset(params.node_key, params.subscription_id, user_id).
             errback(&addition_error(params, member)).
-            callback(&individual_subscriber_key_success(params, member, on_add_callback, added_to_roster, &blk))
+            callback(&individual_subscriber_key_success(params, member, on_add_callback, added_to_roster, &roster_add_block))
         end
       end
 
-      def individual_subscriber_key_success(params, member, on_add_callback, added_to_roster, &blk)
+      def individual_subscriber_key_success(params, member, on_add_callback, added_to_roster, &roster_add_block)
         Proc.new do |*result|
           Slanger.info "Successfully added #{params.full}"
           add_internal params.node_id, params.subscription_id, member
@@ -41,9 +41,9 @@ module Slanger
 
           Slanger.debug "internal_roster: #{@internal_roster}"
 
-          on_add_callback.call added_to_roster if on_add_callback
+          roster_add_block.call if added_to_roster
 
-          blk.call added_to_roster if blk
+          on_add_callback.call added_to_roster if on_add_callback
         end
       end
 
