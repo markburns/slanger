@@ -28,14 +28,27 @@ module Slanger
           puts msg
 
         else
-          msg = "\n#{stack}\n#{msg}\n"
-          if ENV["DEVELOPMENT"]
+
+          if msg =~ /\ASPEC/i
+            msg = "\n#{msg}"
+          else
+            msg = "\n#{stack}\n#{msg}\n"
+          end
+
+          if ENV["DEBUGGER"]
             klass = binding.of_caller(1).eval('self.class')
             meth  = binding.of_caller(1).eval('__method__')
-
-            msg = "node-#{Slanger::Service.node_id} #{klass}##{meth}#{msg}"
+            if klass.name =~/RSpec/
+              msg = "node-#{Slanger::Service.node_id} #{msg}\n"
+            else
+              msg = "node-#{Slanger::Service.node_id} #{klass}##{meth}#{msg}\n\n"
+            end
           end
-          logger.send(m, msg)
+          if ["LOG_NO_TIMESTAMPS"]
+            puts msg
+          else
+            logger.send(m, msg)
+          end
         end
       end
 

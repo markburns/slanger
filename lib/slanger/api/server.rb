@@ -27,6 +27,17 @@ module Slanger
         end
       end
 
+      if ENV["DEBUGGER"]
+        get '/slanger/roster/:channel_id' do
+          channel_id = params[:channel_id]
+          raise Slanger::InvalidRequest.new "invalid channel_id" unless channel_id =~ /\Apresence-[a-zA-Z_\-]+\z/
+
+          channel = Slanger::Channel.from(channel_id)
+          r = channel.send(:roster)
+          [r.internal_roster, r.user_mapping].to_json
+        end
+      end
+
       post '/apps/:app_id/events' do
         valid_request.tap do |r|
           EventPublisher.publish(r.channels,

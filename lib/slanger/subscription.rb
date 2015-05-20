@@ -11,9 +11,9 @@ module Slanger
     end
 
     def subscribe
-      subscription_id = channel.join { |m|
-        push_message m
-      }
+      subscription_id = channel.join(@msg) { |m| 
+        byebug if is_a? Slanger::Presence::Subscription
+        push_message m }
 
       Slanger.debug "#{self.class} subscribed socket_id: #{socket_id} to channel_id: #{channel_id} subscription_id: #{subscription_id}"
 
@@ -60,6 +60,7 @@ module Slanger
       end
 
       error({ message: message})
+      nil
     end
   end
 end

@@ -17,19 +17,14 @@ describe 'Slanger::Roster' do
   let(:user_1) { {"user_id" => "U1", "user_info" => {}} }
   let(:user_2) { {"user_id" => "U2", "user_info" => {"something" =>"here"}} }
 
-  let(:subscriptions_1) do
-    { "N1" => ["S1"],
-      "N2" => ["S2"] }
-  end
-
-  let(:subscriptions_2) do
+  let(:internal_roster) do
     {
-      "N2" => ["S3"],
-      "N3" => ["S4", "S5"]
+      "N1" => {"S1" => "U1"},
+      "N2" => {"S2" => "U2"},
+      "N3" => {"S3" => "U1", "S4" => "U2"}
     }
   end
 
-  let(:internal_roster) { {user_1 => subscriptions_1, user_2 => subscriptions_2} }
   let(:user_mapping)do
     {"U1"=>{}, "U2"=> {"something" => "here"}}
   end

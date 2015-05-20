@@ -45,8 +45,10 @@ RSpec.configure do |config|
     begin
       redis = Redis.new
 
-      redis.keys("*").each do |k|
-        Slanger.debug "deleting #{k}"
+      keys = redis.keys("*")
+      Slanger.debug "deleting #{keys}"
+
+      keys.each do |k|
         redis.del k
       end
 

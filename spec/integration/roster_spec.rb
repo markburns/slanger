@@ -83,7 +83,7 @@ describe "PresenceChannel Roster" do
               subscribe_to_presence_channel(ws_1, user, "1.1")
               @subscribed_ws_1 = true
 
-              EM.add_periodic_timer(0.5) do
+              EM.add_periodic_timer(0.8) do
                 if @subscribed_ws_2 && !@closing_ws_2 && !@closed_ws_2
                   #we can't check the roster status after EM.stop as it
                   #closes the websockets and removes the members

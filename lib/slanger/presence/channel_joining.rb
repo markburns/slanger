@@ -18,7 +18,9 @@ module Slanger
 
         # Associate the subscription data to the public id in Redis.
         roster.add(Slanger::Service.node_id, public_subscription_id, member, online_callback) do |added|
-          if added
+          # Don't tell the channel subscribers a new member has been added if the subscriber data
+          # is already present in the roster hash, e.g. multiple browser windows open.
+          if added && roster.only_reference?(member["user_id"])
             push payload('pusher_internal:member_added', member)
           end
         end
@@ -27,14 +29,17 @@ module Slanger
       end
 
       def online_callback_from(status_change_redis, public_subscription_id, &blk)
-        Proc.new do
+        Proc.new do |added_to_roster|
           EM.next_tick do
             # fuuuuuuuuuccccccck!
             status_change_redis.callback do |*result|
               Slanger.debug "Redis online slanger:connection_notification complete, public_subscription_id: #{public_subscription_id} result: #{result}"
 
               id = em_channel.subscribe &blk
-              push payload('pusher_internal:subscription_succeeded', summary_info.to_json)
+
+              if added_to_roster
+                push payload('pusher_internal:subscription_succeeded', summary_info.to_json)
+              end
 
               Slanger.debug "PresenceChannel joined em_channel: #{id} public_subscription_id: #{public_subscription_id}"
 

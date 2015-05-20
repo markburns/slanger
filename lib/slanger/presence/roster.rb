@@ -12,12 +12,31 @@ module Slanger
         @user_mapping    = redis_roster.user_mapping
       end
 
-      def subscribers_count
-        subscribers.size
+      def ids
+        all_ids.uniq
       end
 
-      def ids
-        subscribers.map(&:first)
+      def only_reference?(id)
+        id_count_for(id)==1
+      end
+
+      def id_count_for(id)
+        id_counts[id]
+      end
+
+      def all_ids
+        @internal_roster.values.map(&:values).flatten
+      end
+
+      def id_counts
+        @internal_roster.values.map(&:values).flatten.each_with_object({}) do |id, result|
+          result[id] ||= 0
+          result[id] += 1
+        end
+      end
+
+      def subscribers_count
+        subscribers.size
       end
 
       def subscribers

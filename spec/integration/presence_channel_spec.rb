@@ -3,21 +3,7 @@
 require 'spec_helper'
 
 describe 'Integration' do
-  before(:each) { start_slanger { test_setup }}
-
-  let(:test_setup) do
-    Slanger::Service.fetch_node_id!
-    Slanger::Service.set_online_status!
-    allow(Slanger::Presence::Channel::RandomSubscriptionId).to receive(:next).
-      and_return(*ids("subscription"))
-
-    allow(Slanger::Connection::RandomSocketId).to receive(:next).
-      and_return(*ids("socket"))
-  end
-
-  def ids(name, count=29)
-    (1..count).to_a.map{|i| "#{name}-#{i}"}
-  end
+  before(:each) { start_slanger { set_predictable_socket_and_subscription_ids! }}
 
   describe 'presence channels:' do
     context 'subscribing without channel data' do
@@ -84,7 +70,7 @@ describe 'Integration' do
             end
           end
 
-          expect(messages).to have_attributes connection_established: true, count: 4
+          expect(messages).to have_attributes connection_established: true, count: 3
 
           data = {"presence"=>{"count"=>1,
                                "ids"=>["0f177369a3b71275d25ab1b44db9f95f"],
@@ -118,7 +104,7 @@ describe 'Integration' do
                     EventMachine::PeriodicTimer.new(0.01) do
                       timer_added=true
 
-                      if client2_messages.length == 2
+                      if client2_messages.length >= 2
                         EM.stop
                       end
                     end
@@ -151,7 +137,7 @@ describe 'Integration' do
               end
             end
 
-            expect(client1_messages).to have_attributes connection_established: true, count: 4
+            expect(client1_messages).to have_attributes connection_established: true, count: 5
             # Channel id should be in the payload
             #data = {presence: {"count"=>2, "ids"=>["0f177369a3b71275d25ab1b44db9f95f", "37960509766262569d504f02a0ee986d"], "hash"=>{"0f177369a3b71275d25ab1b44db9f95f"=>{"name"=>"SG"}, "37960509766262569d504f02a0ee986d"=>{"name"=>"CHROME"}}}}
             data = {presence: {"count"=>1, "ids"=>["0f177369a3b71275d25ab1b44db9f95f"], "hash"=>{"0f177369a3b71275d25ab1b44db9f95f"=>{"name"=>"SG"}}}}
@@ -160,42 +146,59 @@ describe 'Integration' do
             expect(subscription_message).to eq({"channel"=>"presence-channel", "event"=>"pusher_internal:subscription_succeeded",
                                                "data"=>data.to_json})
 
-            added_message = client1_messages.find{|m| m["event"] == "pusher_internal:member_added"}
+            added_message = client1_messages.find{|m| m["event"] == "pusher_internal:member_added" && m["data"]["user_id"] == "37960509766262569d504f02a0ee986d"}
             expect(added_message).to eq({"channel"=>"presence-channel", "event"=>"pusher_internal:member_added",
                                                "data"=>{"user_id"=>"37960509766262569d504f02a0ee986d", "user_info"=>{"name"=>"CHROME"}}})
           end
 
+
           it 'does not send multiple member added and member removed messages if one subscriber opens multiple connections, i.e. multiple browser tabs.' do
-            messages  = em_stream do |user1, messages|
+            messages = em_stream do |user1, messages|
               case messages.length
               when 1
-                send_subscribe(user: user1,
-                               user_id: '0f177369a3b71275d25ab1b44db9f95f',
-                               name: 'SG',
-                               message: messages.first)
-
+                subscribe_to_presence_channel(user1, {user_id: "0f177369a3b71275d25ab1b44db9f95f", name: "SG"}, "1.1")
               when 2
-                @sockets = 3.times.map do |i|
-                  new_websocket.tap do |u|
-                    u.stream do |message|
-                      send_subscribe({ user: u,
-                                       user_id: '37960509766262569d504f02a0ee986d',
-                                       name: 'CHROME',
-                                       message: messages.first})
-                    end
-                  end
+                multiple_async_connections(3) do |ws, socket_id|
+                  subscribe_to_presence_channel(ws, {user_id: "37960509766262569d504f02a0ee986d", name: "CHROME"}, socket_id)
                 end
-              when 6
+              when 5 #(ws_1 connection, subscription), 3 (connection + subscription), 3 disconnect
                 EM.stop
               end
-
             end
 
+
             # There should only be one set of presence messages sent to the reference user for the second user.
-
-
             added   = messages.select {|m| m['event'] == 'pusher_internal:member_added'   && m['data']['user_id'] == '37960509766262569d504f02a0ee986d' }
             expect(added.length).to eq 1
+          end
+        end
+      end
+
+      def multiple_async_connections(num)
+        multiple_sockets(num) do |u, msg, i|
+          msg = JSON.parse msg
+          socket_id = "1.#{i + 2}"
+
+          if msg["event"]=="pusher:connection_established"  
+            if JSON.parse(msg["data"])["socket_id"] == socket_id
+              EM.add_timer(0.1 + (0.5 * i.to_f * rand)) do
+                yield u, socket_id
+
+                EM.add_timer(0.5 + (0.5 * i.to_f * rand)) do
+                  u.close_connection
+                end
+              end
+            end
+          end
+        end
+      end
+
+      def multiple_sockets(num)
+        num.times.map do |i|
+          new_websocket.tap do |u|
+            u.stream do |msg|
+              yield u, msg, i
+            end
           end
         end
       end

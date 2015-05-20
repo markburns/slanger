@@ -4,8 +4,8 @@ module Slanger
       private
 
       def update_slanger_nodes_about_presence_change(payload, retry_count=0)
-        Slanger.debug "Redis send slanger:connection_notification #{payload}, retry_number: #{retry_count}"
         payload[:node_id] = Slanger::Service.node_id
+        Slanger.debug "Redis send slanger:connection_notification #{payload}, retry_number: #{retry_count}"
 
         # Send a subscription notification to the global slanger:connection_notification
         # channel.
@@ -23,27 +23,15 @@ module Slanger
       def handle_slanger_connection_notification(message)
         Slanger.debug "incoming message #{__method__} #{message}"
         node_id = message["node_id"]
+        return if node_id.to_s == Slanger.node_id.to_s
+
         subscription_id = message["subscription_id"]
 
         if message["online"]
           member = message['channel_data']
-          roster.add(node_id, subscription_id, member) do |added|
-            # Don't tell the channel subscribers a new member has been added if the subscriber data
-            # is already present in the roster hash, e.g. multiple browser windows open.
-            if added
-              push payload('pusher_internal:member_added', member)
-            end
-          end
+          roster.add_internal(node_id, subscription_id, member)
         else
-          roster.remove node_id, subscription_id do |removed|
-            if removed
-              # Don't tell the channel subscriptions the member has been removed if the subscriber data
-              # still remains in the roster hash, e.g. multiple browser windows open.
-
-              push payload('pusher_internal:member_removed', { user_id: member['user_id'] })
-            end
-          end
-
+          roster.remove_internal RosterParams.new(message["channel_id"], node_id, subscription_id)
         end
       end
     end

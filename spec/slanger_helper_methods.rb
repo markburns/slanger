@@ -82,6 +82,18 @@ module SlangerHelperMethods
 
   end
 
+  def set_predictable_socket_and_subscription_ids!
+    Slanger::Service.fetch_node_id!
+    Slanger::Service.set_online_status!
+    ids = (1..50).to_a.map{|i| "S#{Slanger.node_id}-#{i}"}
+    allow(Slanger::Presence::Channel::RandomSubscriptionId).to receive(:next).
+      and_return(*ids)
+
+    ids = (1..50).to_a.map{|i| "#{Slanger.node_id}.#{i}"}
+    allow(Slanger::Connection::RandomSocketId).to receive(:next).
+      and_return(*ids)
+  end
+
   def new_websocket opts = {}
     opts = { key: Pusher.key, protocol: 7 }.update opts
     uri = "ws://0.0.0.0:8080/app/#{opts[:key]}?client=js&version=1.8.5&protocol=#{opts[:protocol]}"
@@ -130,11 +142,20 @@ module SlangerHelperMethods
     end
   end
 
+  def new_ws_stream messages, websocket_name=nil
+    new_websocket.tap do |ws|
+      stream ws, messages, websocket_name do |message|
+        yield ws, message
+      end
+    end
+  end
+
   def stream websocket, messages, websocket_name=nil
     websocket.stream do |message|
-      Slanger.debug "SPEC #{websocket_name} messages: #{messages}"
-      Slanger.debug "SPEC #{websocket_name} message received #{message}"
+      Slanger.debug "SPEC #{websocket_name} messages: [#{messages.join "\n"}]\n"
+      Slanger.debug "SPEC #{websocket_name} message received #{message}\n"
       messages << JSON.parse(message)
+      Slanger.debug "SPEC #{websocket_name} messages: [#{messages.join "\n"}]\n"
 
       yield message
     end

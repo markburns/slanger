@@ -42,7 +42,7 @@ describe Slanger::Presence::RosterAddition do
       }
     end
 
-    let(:callback) { ->{ EM.stop }}
+    let(:callback) { ->(*a){ EM.stop }}
 
     context do
       before do

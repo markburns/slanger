@@ -23,7 +23,7 @@ module Slanger
       end
 
       # Send an event received from Redis to the EventMachine channel
-      def dispatch(message, channel_id)
+      def dispatch(message)
         Slanger.debug "PresenceChannel dispatch incoming channel_id: #{channel_id} msg: #{message}"
 
         if channel_id =~ /\Aslanger:/

@@ -35,24 +35,27 @@ module Slanger
         Proc.new do |res|
           user_id = remove_internal(params)
 
+          Slanger.debug "internal_roster: #{@internal_roster}"
+
           if user_in_roster?(user_id)
             blk.call
           else
             user_info = @user_mapping.delete(user_id)
             user = {"user_id" => user_id, "user_info" => user_info}.to_json
 
-            Slanger::Redis.srem(params.channel_key, user) do
-              blk.call
+            Slanger::Redis.srem(params.channel_key, user) do |res|
+              removed = res == 1
+              blk.call removed, user
             end
           end
 
-          Slanger.debug "roster.remove successful channel_id: #{channel_id} user_node_key: #{params.full} internal_roster: #{@internal_roster}"
+          Slanger.debug "Roster#remove successful channel_id: #{channel_id} user_node_key: #{params.full} internal_roster: #{@internal_roster}"
         end
       end
 
       def removal_error(params)
         Proc.new do |e|
-          Slanger.error "roster.remove failed #{e} params: #{params.full}"
+          Slanger.error "Roster#remove failed #{e} params: #{params.full}"
         end
       end
 

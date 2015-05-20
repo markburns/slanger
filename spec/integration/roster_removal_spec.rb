@@ -155,7 +155,7 @@ describe Slanger::Presence::RosterRemoval do
     end
 
 
-    let(:callback) { ->{ EM.stop }}
+    let(:callback) { ->(*a){ EM.stop }}
 
     let(:subscription_id_to_delete) { "S1" }
     let(:node_to_delete_from) { "N1" }

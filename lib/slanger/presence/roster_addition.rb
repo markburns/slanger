@@ -11,6 +11,7 @@ module Slanger
           errback(&addition_error(params, member: member))
       end
 
+
       def add_internal(node_id, subscription_id, member)
         @internal_roster[node_id] ||= {}
         @internal_roster[node_id][subscription_id] = member["user_id"]
@@ -20,7 +21,7 @@ module Slanger
 
       def main_presence_key_success(params, member, on_add_callback, &blk)
         Proc.new do |res|
-          Slanger.debug "roster.add successful #{params.full}, member: #{member}"
+          Slanger.debug "Roster#add successful #{params.full}, member: #{member}"
           user_id = member["user_id"]
           added_to_roster = res == 1
 
@@ -34,15 +35,15 @@ module Slanger
 
       def individual_subscriber_key_success(params, member, on_add_callback, added_to_roster, &blk)
         Proc.new do |*result|
-        Slanger.info "Successfully added #{params.full}"
-        add_internal params.node_id, params.subscription_id, member
-        Slanger.info "Successfully added to internal roster"
-        on_add_callback.call if on_add_callback
+          Slanger.info "Successfully added #{params.full}"
+          add_internal params.node_id, params.subscription_id, member
+          Slanger.info "Successfully added to internal roster"
 
+          Slanger.debug "internal_roster: #{@internal_roster}"
 
-        blk.call added_to_roster if blk
+          on_add_callback.call added_to_roster if on_add_callback
 
-        Slanger.info "Successfully completed callback"
+          blk.call added_to_roster if blk
         end
       end
 

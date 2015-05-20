@@ -19,6 +19,10 @@ module Slanger
         klass.all[channel_id] ||= klass.new(channel_id)
       end
 
+      def dispatch(message)
+        from(message['channel']).dispatch message
+      end
+
       def leave channel_id, subscription_id
         from(channel_id).try :leave, subscription_id
       end
@@ -43,6 +47,18 @@ module Slanger
       @channel_id = channel_id
       Slanger::Redis.subscribe channel_id
     end
+
+    # Send an event received from Redis to the EventMachine channel
+    # which will send it to subscribed clients.
+    def dispatch(message)
+      if channel_id =~ /\Aslanger:/
+        Slanger.debug "Not dispatching slanger message for channel_id: #{channel_id} message: #{message}"
+      else
+        Slanger.debug "#{self.class}#dispatch: Push message to em_channel channel_id: #{channel_id} message: #{message}"
+        push(message.to_json)
+      end
+    end
+
 
     def em_channel
       @em_channel ||= EM::Channel.new
@@ -97,17 +113,6 @@ module Slanger
       if authenticated?
         Slanger.debug "#{__method__} publish to redis: #{message}"
         Slanger::Redis.publish(message['channel'], message.to_json)
-      end
-    end
-
-    # Send an event received from Redis to the EventMachine channel
-    # which will send it to subscribed clients.
-    def dispatch(message, channel_id)
-      if channel_id =~ /\Aslanger:/
-        Slanger.debug "Not dispatching slanger message for channel_id: #{channel_id} message: #{message}"
-      else
-        Slanger.debug "Channel#dispatch: Push message to em_channel channel_id: #{channel_id} message: #{message}"
-        push(message.to_json)
       end
     end
 

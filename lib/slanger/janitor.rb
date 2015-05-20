@@ -10,17 +10,16 @@ module Slanger
       register_roll_call!(silent_listener: true) do |msg|
         acknowledgements << msg unless msg["type"]=="request"
 
-        Slanger.error "Before timer"
-
         EM.add_timer 0.5 do
-          Slanger.error "Inside timer"
           online_ids = acknowledgements.select{|a| a["online"] }.map do |a|
             a["node_id"].to_s
           end
 
           missing_ids = previously_online - online_ids
 
-          Slanger::Redis.sync_redis_connection.srem("slanger-online-node-ids", missing_ids)
+          if missing_ids.any?
+            Slanger::Redis.sync_redis_connection.srem("slanger-online-node-ids", *missing_ids)
+          end
 
           message = {type: "update", message:"Slanger online node ids updated: #{Slanger::Service.present_node_ids}"}
           em_channel.push(message)
