@@ -39,7 +39,7 @@ module Slanger
             klass = binding.of_caller(1).eval('self.class')
             meth  = binding.of_caller(1).eval('__method__')
             if klass.name =~/RSpec/
-              msg = "node-#{Slanger::Service.node_id} #{msg}\n"
+              msg = "#{msg}\n"
             else
               msg = "node-#{Slanger::Service.node_id} #{klass}##{meth}#{msg}\n\n"
             end
