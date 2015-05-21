@@ -10,14 +10,14 @@ module Slanger
           if removed
             # Don't tell the channel subscriptions the member has been removed if the subscriber data
             # still remains in the roster hash, e.g. multiple browser windows open.
-            push payload('pusher_internal:member_removed', user)
-
             Slanger.debug "Roster removal complete for public_subscription_id: #{public_subscription_id}"
 
             update_slanger_nodes_about_presence_change(
               subscription_id: public_subscription_id,
               online: false
             )
+
+            push payload('pusher_internal:member_removed', user)
           end
         end
       end

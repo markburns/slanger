@@ -177,7 +177,7 @@ describe 'Integration' do
       def multiple_async_connections(num)
         multiple_sockets(num) do |u, msg, i|
           msg = JSON.parse msg
-          socket_id = "1.#{i + 2}"
+          socket_id = msg.to_s[/\d\.\d/]
 
           if msg["event"]=="pusher:connection_established"  
             if JSON.parse(msg["data"])["socket_id"] == socket_id

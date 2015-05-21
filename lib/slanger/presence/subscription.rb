@@ -13,6 +13,7 @@ module Slanger
         msg = @msg.dup
         msg["socket_id"]=socket_id
         subscription_id = channel.join(@msg) do |m|
+          byebug
           push_message m
         end
       end
