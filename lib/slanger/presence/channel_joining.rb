@@ -36,11 +36,7 @@ module Slanger
             status_change_redis.callback do |*result|
               Slanger.debug "Redis online slanger:connection_notification complete, public_subscription_id: #{public_subscription_id} result: #{result}"
 
-
-              if added_to_roster && roster.only_reference?(user_id)
-                push payload('pusher_internal:subscription_succeeded', summary_info.to_json)
-              end
-
+              push payload('pusher_internal:subscription_succeeded', summary_info.to_json)
 
               id = em_channel.subscribe &blk
               Slanger.debug "PresenceChannel joined em_channel: #{id} public_subscription_id: #{public_subscription_id}"

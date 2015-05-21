@@ -1,0 +1,83 @@
+#!/usr/bin/env ruby
+# encoding: utf-8
+
+require 'optparse'
+require 'bundler/setup'
+require 'eventmachine'
+
+options = {
+  verbose: false,
+  redis_address: 'redis://0.0.0.0:6379/0'
+}
+
+if ENV["DEBUGGER"]=="true"
+  puts "debugger enabled"
+  require "byebug"
+  require "pry-byebug"
+end
+
+OptionParser.new do |opts|
+  opts.on '-h', '--help', 'Display this screen' do
+    puts opts
+    exit
+  end
+
+  opts.on '-r', '--redis_address URL', "Address to bind to (Default: redis://127.0.0.1:6379/0)" do |h|
+    options[:redis_address] = h
+  end
+
+  opts.on "-v", "--[no-]verbose", "Run verbosely" do |v|
+    options[:verbose] = v
+  end
+
+  opts.on '--pid_file PIDFILE', "The Slanger process ID file name." do |k|
+    options[:pid_file] = k
+  end
+
+  opts.on '--log_file LOGFILE', "The log file for slanger output. Defaults to STDOUT" do |l|
+    options[:log_file] = l
+  end
+
+  opts.on '--log_level LEVEL', "The log level for slanger. Defaults to INFO" do |l|
+    options[:log_level] = l
+  end
+
+  opts.parse!
+end
+
+STDOUT.sync = true
+
+EM.epoll
+EM.kqueue
+
+
+EM.run do
+  File.tap { |f| require f.expand_path(f.join(f.dirname(__FILE__),'..', 'slanger.rb')) }
+  #force autoload
+  Slanger::Logger
+
+  log_file  = options[:log_file]  || STDOUT
+  log_level = options[:log_level] || Logger::INFO
+
+  Slanger.logger = Logger.new log_file
+  Slanger.log_level = log_level
+
+  Slanger::Config.load options
+
+  Slanger::Janitor.run
+
+  Slanger.info <<-LOGO
+
+          8b888
+            888                     oo
+            888                           88
+            888   8888b.  88888b.   8b. q88999b. dY888b..  888d888
+            d88      "88b 888  88b  88b   88b   dd8P  Y8b 888P"
+            888  .d888888 888  888  888   888   8888  888 888
+     Y88b  d888  888  888 888  888  888   888   YY8b. 88p 888
+      "Y8888P8   "Y888888 888  888  888   888    "Y8888   888
+  LOGO
+
+  Slanger.info "Running Janitor process for Slanger v.#{Slanger::VERSION}"
+  Slanger.info "\n"
+end

@@ -1,5 +1,13 @@
+require "json"
+
 module Slanger
   module Janitor
+    def run(interval=5)
+      EM.add_periodic_timer(interval) do
+        request!
+      end
+    end
+
     def request!
       redis.publish("slanger:roll_call", {type: "request"}.to_json)
 
@@ -11,15 +19,21 @@ module Slanger
         acknowledgements << msg unless msg["type"]=="request"
 
         EM.add_timer 0.5 do
+          Slanger.info "Running check"
+
           online_ids = acknowledgements.select{|a| a["online"] }.map do |a|
             a["node_id"].to_s
           end
 
           missing_ids = previously_online - online_ids
+          previously_online = online_ids
 
-          if missing_ids.any?
-            Slanger::Redis.sync_redis_connection.srem("slanger-online-node-ids", *missing_ids)
+          missing_ids.each do |id|
+            Slanger.error "Slanger node: #{id} is down, removing from roster"
+
+            Slanger::Redis.sync_redis_connection.srem("slanger-online-node-ids", id)
           end
+
 
           message = {type: "update", message:"Slanger online node ids updated: #{Slanger::Service.present_node_ids}"}
           em_channel.push(message)
