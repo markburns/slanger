@@ -17,6 +17,7 @@ options = {
 if ENV["DEBUGGER"]=="true"
   puts "debugger enabled"
   require "byebug"
+  require "pry-byebug"
 end
 
 OptionParser.new do |opts|
