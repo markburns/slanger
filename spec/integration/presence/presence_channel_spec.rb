@@ -70,7 +70,7 @@ describe 'Integration' do
             end
           end
 
-          expect(messages).to have_attributes connection_established: true, count: 3
+          expect(messages).to have_attributes connection_established: true, count: 2
 
           data = {"presence"=>{"count"=>1,
                                "ids"=>["0f177369a3b71275d25ab1b44db9f95f"],
@@ -166,9 +166,8 @@ describe 'Integration' do
               end
             end
 
-
             # There should only be one set of presence messages sent to the reference user for the second user.
-            added   = messages.select {|m| m['event'] == 'pusher_internal:member_added'   && m['data']['user_id'] == '37960509766262569d504f02a0ee986d' }
+            added = messages.select {|m| m['event'] == 'pusher_internal:member_added'   && m['data']['user_id'] == '37960509766262569d504f02a0ee986d' }
             expect(added.length).to eq 1
           end
         end

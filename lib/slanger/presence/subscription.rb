@@ -11,9 +11,11 @@ module Slanger
         end
 
         msg = @msg.dup
-        msg["socket_id"]=socket_id
-        subscription_id = channel.join(@msg) do |m|
-          byebug
+        #used in callback to ensure we don't push out to the same socket that
+        #has already has a response for the member_added
+        msg["socket_id"] = socket_id
+
+        subscription_id = channel.join(msg) do |m|
           push_message m
         end
       end

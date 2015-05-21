@@ -44,6 +44,7 @@ module Slanger
               msg = "node-#{Slanger::Service.node_id} #{klass}##{meth}#{msg}\n\n"
             end
           end
+
           if ["LOG_NO_TIMESTAMPS"]
             puts msg
           else
