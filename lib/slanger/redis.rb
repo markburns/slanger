@@ -32,7 +32,11 @@ module Slanger
     def subscriber
       @subscriber ||= new_connection.pubsub.tap do |c|
         c.on(:message) do |channel, message|
+          begin
           Channel.dispatch JSON.parse message
+          rescue
+          byebug
+          end
         end
       end
     end

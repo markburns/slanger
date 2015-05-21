@@ -5,6 +5,9 @@ module Slanger
 
       def update_slanger_nodes_about_presence_change(payload, retry_count=0)
         payload[:node_id] = Slanger::Service.node_id
+        payload[:slanger_channel] = "slanger:connection_notification"
+        payload[:channel] =  channel_id
+
         Slanger.debug "Redis send slanger:connection_notification #{payload}, retry_number: #{retry_count}"
 
         # Send a subscription notification to the global slanger:connection_notification
@@ -31,7 +34,7 @@ module Slanger
           member = message['channel_data']
           roster.add_internal(node_id, subscription_id, member)
         else
-          roster.remove_internal RosterParams.new(message["channel_id"], node_id, subscription_id)
+          roster.remove_internal RosterParams.new(channel_id, node_id, subscription_id)
         end
       end
     end

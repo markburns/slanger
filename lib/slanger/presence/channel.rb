@@ -16,8 +16,8 @@ module Slanger
       include ChannelLeaving
       include ChannelStatusChange
 
-      def initialize(*args)
-        super *args
+      def initialize(args)
+        super args
 
         roster
       end
@@ -26,7 +26,7 @@ module Slanger
       def dispatch(message)
         Slanger.debug "PresenceChannel dispatch incoming channel_id: #{channel_id} msg: #{message}"
 
-        if channel_id =~ /\Aslanger:/
+        if message["slanger_channel"] == "slanger:connection_notification"
           # Messages received from the Redis channel slanger:*  carry info on
           # roster. Update our subscribers accordingly.
           handle_slanger_connection_notification message
@@ -48,8 +48,8 @@ module Slanger
         @roster ||= Roster.new(channel_id)
       end
 
-      def payload(event_name, payload = {})
-        { channel: channel_id, event: event_name, data: payload }.to_json
+      def payload(event_name, payload = {}, socket_id: nil)
+        { channel: channel_id, event: event_name, data: payload, socket_id: socket_id}.to_json
       end
     end
   end

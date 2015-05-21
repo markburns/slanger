@@ -90,6 +90,7 @@ module Slanger
         Slanger.debug "Creating new subscription socket_id: #{socket_id} channel_id: #{channel_id} type: #{klass}"
         subscription = klass.new(connection.socket, connection.socket_id, msg)
         subscription_id = subscription.subscribe
+
         if subscription_id
           Slanger.debug "Subscribed socket_id: #{socket_id} to channel_id: #{channel_id} subscription_id: #{subscription_id}"
           @subscriptions[channel_id] = subscription_id

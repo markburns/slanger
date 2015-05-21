@@ -16,8 +16,7 @@ module Slanger
 
             update_slanger_nodes_about_presence_change(
               subscription_id: public_subscription_id,
-              online: false,
-              channel: channel_id
+              online: false
             )
           end
         end

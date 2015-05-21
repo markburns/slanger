@@ -90,19 +90,18 @@ module Slanger
       end
     end
 
+    WEBHOOK_ATTRIBUTES = {subscribe:   ["channel_occupied",1],
+                          unsubscribe: ["channel_vacated", 0]}
+
     def trigger_webhook(type, value)
-      webhook_name, trigger_value = webhook_attributes[type.to_sym]
+      webhook_name, trigger_value = WEBHOOK_ATTRIBUTES[type.to_sym]
 
       Slanger::Webhook.post name: webhook_name, channel: channel_id if value == trigger_value
     end
 
-    def webhook_attributes
-      {:subscribe   => ["channel_occupied",1],
-       :unsubscribe => ["channel_vacated", 0]}
-    end
-
     def push(msg)
       Slanger.debug "Pushing message to em_channel: #{channel_id} #{msg}"
+
       em_channel.push msg
     end
 

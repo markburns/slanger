@@ -3,6 +3,7 @@ module Slanger
     module RosterAddition
       def add(node_id, subscription_id, member, on_add_callback=nil, &roster_add_block)
         Slanger.debug "Roster adding to redis node_id: #{node_id} subscription_id:#{subscription_id} member: #{member}"
+
         params = RosterParams.new(channel_id, node_id, subscription_id)
 
         Slanger::Redis.
@@ -41,9 +42,11 @@ module Slanger
 
           Slanger.debug "internal_roster: #{@internal_roster}"
 
-          roster_add_block.call if added_to_roster
+          if only_reference?(member["user_id"])
+            on_add_callback.call added_to_roster if on_add_callback
 
-          on_add_callback.call added_to_roster if on_add_callback
+            roster_add_block.call added_to_roster if roster_add_block
+          end
         end
       end
 
