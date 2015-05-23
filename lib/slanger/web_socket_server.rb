@@ -13,7 +13,7 @@ module Slanger
           @first_run=true
           # Also subscribe the slanger daemon to a Redis channel used for events concerning subscriptions.
           Slanger::Redis.subscribe 'slanger:connection_notification'
-          Slanger::Janitor.register_roll_call!
+          Slanger::Janitor::Node.subscribe
 
           EM::WebSocket.start options do |ws|
             attach_handlers ws

@@ -64,7 +64,6 @@ EM.run do
 
   Slanger::Config.load options
 
-  Slanger::Janitor.run
 
   Slanger.info <<-LOGO
 
@@ -80,4 +79,5 @@ EM.run do
 
   Slanger.info "Running Janitor process for Slanger v.#{Slanger::VERSION}"
   Slanger.info "\n"
+  Slanger::Janitor.run
 end

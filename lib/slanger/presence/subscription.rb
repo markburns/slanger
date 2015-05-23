@@ -11,9 +11,12 @@ module Slanger
         end
 
         msg = @msg.dup
-        #used in callback to ensure we don't push out to the same socket that
-        #has already has a response for the member_added
-        msg["socket_id"] = socket_id
+
+        #ensure we send back the initial notification to the websocket
+        if msg["event"] !~ /subscription_succeeded/
+          #used in connection to ensure we don't ping back the member_added to the same socket
+          msg["socket_id"] = socket_id
+        end
 
         subscription_id = channel.join(msg) do |m|
           push_message m

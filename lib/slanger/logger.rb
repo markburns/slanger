@@ -21,38 +21,35 @@ module Slanger
 
     %w(info debug warn error).each do |m|
       define_method(m) do |msg|
-        stack = get_lines_from caller[0..4]
-
-        if ENV["SLIM_LOG"]
-          msg = "\n#{msg}\n"
-          puts msg
-
-        else
-
+        if ENV["LOG_STACK"]
           if msg =~ /\ASPEC/i
             msg = "\n#{msg}"
           else
+            stack = get_lines_from caller[0..4]
             msg = "\n#{stack}\n#{msg}\n"
           end
+        end
 
-          if ENV["DEBUGGER"]
-            klass = binding.of_caller(1).eval('self.class')
-            meth  = binding.of_caller(1).eval('__method__')
-            if klass.name =~/RSpec/
-              msg = "#{msg}\n"
-            else
-              msg = "node-#{Slanger::Service.node_id} #{klass}##{meth}#{msg}\n\n"
-            end
-          end
+        klass = nil
 
-          if ["LOG_NO_TIMESTAMPS"]
-            puts msg
+        if ENV["LOG_CALLER"]
+          klass = binding.of_caller(1).eval('self.class')
+          meth  = binding.of_caller(1).eval('__method__')
+          if klass.name =~/RSpec/
+            msg = "#{msg}\n"
           else
-            logger.send(m, msg)
+            msg = " #{klass}##{meth}#{msg}\n\n"
           end
         end
-      end
 
+        if ENV["LOG_NODE_ID"] && klass.to_s !~ /RSpec/
+          msg = "node-#{Slanger::Service.node_id} #{msg}\n\n"
+        end
+
+        return puts msg if ENV["LOG_PUTS"]
+
+        logger.send(m, msg)
+      end
     end
 
     def get_lines_from(array)

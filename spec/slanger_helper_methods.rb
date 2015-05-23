@@ -152,7 +152,6 @@ module SlangerHelperMethods
 
   def stream websocket, messages, websocket_name=nil
     websocket.stream do |message|
-      Slanger.debug "SPEC #{websocket_name} messages: [#{messages.join "\n"}]\n"
       Slanger.debug "SPEC #{websocket_name} message received #{message}\n"
       messages << JSON.parse(message)
       Slanger.debug "SPEC #{websocket_name} messages: [#{messages.join "\n"}]\n"
@@ -182,6 +181,31 @@ module SlangerHelperMethods
       }
     }.to_json)
   end
+
+  def start_ha_proxy
+    Slanger.debug "Starting haproxy"
+
+    fork_reactor do
+      exec "haproxy -f spec/support/haproxy.cfg"
+    end
+  end
+
+  def stop_ha_proxy
+    `killall -9 haproxy`
+  end
+
+  def start_slanger_nodes_and_haproxy
+    stop_ha_proxy
+    start_slanger(websocket_port: 8081, api_port: 4568) { set_predictable_socket_and_subscription_ids! }
+    start_slanger(websocket_port: 8082, api_port: 4569) { set_predictable_socket_and_subscription_ids! }
+    wait_for_socket(8081)
+    wait_for_socket(8082)
+
+    start_ha_proxy
+    wait_for_socket(8080)
+    wait_for_socket(4567)
+  end
+
 
   def private_channel websocket, message, channel="channel"
     channel = "private-#{channel}"

@@ -16,7 +16,11 @@ module Slanger
       def from channel_id
         klass = channel_id[/\Apresence-/] ? Presence::Channel : Channel
 
-        klass.all[channel_id] ||= klass.new(channel_id)
+        klass.all[channel_id] ||=
+          begin
+            Slanger::Redis.subscribe channel_id
+            klass.new(channel_id)
+          end
       end
 
       def dispatch(message)
@@ -45,7 +49,6 @@ module Slanger
 
     def initialize(channel_id)
       @channel_id = channel_id
-      Slanger::Redis.subscribe channel_id
     end
 
     # Send an event received from Redis to the EventMachine channel

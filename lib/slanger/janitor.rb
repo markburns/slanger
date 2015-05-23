@@ -2,77 +2,82 @@ require "json"
 
 module Slanger
   module Janitor
-    def run(interval=5)
-      EM.add_periodic_timer(interval) do
-        request!
+    def run(interval=1)
+      setup!(interval) do
+        EM.add_periodic_timer(interval) do
+          Slanger.debug "Sending rollcall request"
+          request!
+        end
       end
     end
 
     def request!
+      @waiting_for_responses = true
       redis.publish("slanger:roll_call", {type: "request"}.to_json)
+      Slanger.debug "#{self} Sent, waiting for responses..."
+    end
 
-      acknowledgements = []
+    def setup!(interval)
+      Slanger.debug "#{self} setup!"
+      return if @setup
 
-      previously_online = Slanger::Service.present_node_ids
+      @acknowledgements = []
 
-      register_roll_call!(silent_listener: true) do |msg|
-        acknowledgements << msg unless msg["type"]=="request"
+      @node_status = Slanger::Janitor::NodeStatus.new
 
-        EM.add_timer 0.5 do
-          Slanger.info "Running check"
-
-          online_ids = acknowledgements.select{|a| a["online"] }.map do |a|
-            a["node_id"].to_s
-          end
-
-          missing_ids = previously_online - online_ids
-          previously_online = online_ids
-
-          missing_ids.each do |id|
-            Slanger.error "Slanger node: #{id} is down, removing from roster"
-
-            Slanger::Redis.sync_redis_connection.srem("slanger-online-node-ids", id)
-          end
+      Slanger.info "Online nodes: #{@node_status.previously_online_ids}"
 
 
-          message = {type: "update", message:"Slanger online node ids updated: #{Slanger::Service.present_node_ids}"}
-          em_channel.push(message)
+      subscribe_to_roll_call do |msg|
+        if msg["type"]=="response"
+          Slanger.debug "Response received #{msg}"
+          @acknowledgements << msg
         end
       end
+
+      yield if block_given?
+
+      #give time after the initial rollcall request has been sent
+      EM.add_timer interval + 1 do
+        setup_response_monitoring(interval)
+      end
+
+      @setup = true
+    end
+
+    def setup_response_monitoring(interval)
+      EM.add_periodic_timer interval do
+        Slanger.debug "#{self} checking for responses"
+
+        monitor_responses if @waiting_for_responses
+      end
+    end
+
+    def monitor_responses
+      Slanger.debug "Determining online node ids from responses: #{@acknowledgements}"
+      Slanger.debug "Previously online: #{@node_status.previously_online_ids}"
+
+      missing_ids =@node_status.update_from_acknowledgements!(@acknowledgements)
+      @acknowledgements.clear
+
+      if missing_ids.none?
+        Slanger.info "Online nodes: #{@node_status.online_ids}"
+      end
+
+      message = {type: "update", message: "Slanger online node ids updated: #{Slanger::Service.present_node_ids}"}
+      em_channel.push(message)
+      @waiting_for_responses = false
     end
 
     def em_channel
       @em_channel ||= EM::Channel.new
     end
 
-    def register_roll_call!(silent_listener: false, &blk)
+    def subscribe_to_roll_call
       pubsub.on(:message) do |channel, msg|
-        msg = JSON.parse msg
-
-        if silent_listener
-          yield msg
-        else
-          handle channel, msg, &blk
-        end
+        yield JSON.parse msg
       end
     end
-
-    def handle(channel, msg, &blk)
-      Slanger.debug "Node:#{Slanger.node_id} Rollcall message received: #{msg}"
-
-      if msg["type"] == "request"
-        respond
-      else
-        blk.call msg if blk
-      end
-    end
-
-    def respond
-      reply = {node_id: Slanger.node_id, pid: Process.pid, online: true}
-
-      redis.publish("slanger:roll_call", reply.to_json)
-    end
-
     private
 
     def pubsub
