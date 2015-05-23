@@ -26,13 +26,11 @@ module Slanger
     end
 
     def error e
-      begin
-        Slanger.error e
-        push_payload nil, 'pusher:error', e
-      rescue EventMachine::WebSocket::WebSocketError
-        # Raised if connecection already closed. Only seen with Thor load testing tool
-        Slanger.error "Connection closed whilst trying to send error: #{e}"
-      end
+      Slanger.error e
+      push_payload nil, 'pusher:error', e
+    rescue EventMachine::WebSocket::WebSocketError
+      # Raised if connecection already closed. Only seen with Thor load testing tool
+      Slanger.error "Connection closed whilst trying to send error: #{e}"
     end
 
     def acknowledge_established
