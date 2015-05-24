@@ -26,7 +26,6 @@ module Slanger
       def handle_slanger_connection_notification(message)
         Slanger.debug "incoming message #{__method__} #{message}"
         node_id = message["node_id"]
-        return if node_id.to_s == Slanger.node_id.to_s
 
         subscription_id = message["subscription_id"]
 

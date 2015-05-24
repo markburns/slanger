@@ -16,6 +16,7 @@ module Slanger
 
       def remove_internal(params)
         user = internal_roster[params.node_id].delete(params.subscription_id)
+        @user_mapping.delete params.user_id
       rescue NoMethodError
         user = nil
       ensure
@@ -40,18 +41,24 @@ module Slanger
           if user_in_roster?(user_id)
             blk.call
           else
-            user_info = @user_mapping.delete(user_id)
-            user = {"user_id" => user_id, "user_info" => user_info}.to_json
+            user_info = @user_mapping.delete(user_id) || {}
+            member = member_from_user_id(user_id)
 
-            Slanger::Redis.srem(params.channel_key, user) do |res|
-              removed = res == 1
-              blk.call removed, user
+            Slanger::Redis.srem(params.channel_key, member.to_json) do |res|
+              blk.call true, member
             end
           end
 
           Slanger.debug "Roster#remove successful channel_id: #{channel_id} user_node_key: #{params.full} internal_roster: #{@internal_roster}"
         end
       end
+
+      def member_from_user_id(user_id)
+        redis = Slanger::Redis.sync_redis_connection
+        members = redis.smembers "slanger-roster-presence-abcd"
+        members.map{|a| JSON.parse(a)}.find{|u| user_id==u["user_id"]}
+      end
+
 
       def removal_error(params)
         Proc.new do |e|

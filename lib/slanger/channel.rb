@@ -36,7 +36,7 @@ module Slanger
         if channel
           channel.send_client_message msg
         else
-          Slamger.error "#{__method__} Channel not found for send message: #{msg}"
+          Slamger.error "#{__method__} Channel not found to send message: #{msg}"
         end
       end
 

@@ -7,7 +7,7 @@ module Slanger
         params = RosterParams.new(channel_id, node_id, subscription_id)
 
         Slanger::Redis.
-          sadd(params.channel_key, member.to_json).
+          sadd(params.channel_key, member.user_id).
           callback(&main_presence_key_success(params, member, on_add_callback, &roster_add_block)).
           errback(&addition_error(params, member: member))
       end
@@ -26,7 +26,7 @@ module Slanger
           user_id = member["user_id"]
           added_to_roster = res == 1
 
-          @user_mapping[member["user_id"]]=member["user_info"]
+          @user_mapping[member["user_id"]]=member["user_info"] || {}
 
           Slanger::Redis.hset(params.node_key, params.subscription_id, user_id).
             errback(&addition_error(params, member)).
