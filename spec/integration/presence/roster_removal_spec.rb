@@ -130,25 +130,19 @@ describe Slanger::Presence::RosterRemoval do
     before do
       setup_test_data!
 
-      EM.run do
-        roster.remove(node_to_delete_from, subscription_id_to_delete, &callback)
-
-        EM.add_timer 2 do
-          EM.stop
-        end
-      end
+      roster.remove("N1", "S1", &callback)
     end
 
     after do
       #sanity check
-      expect(roster.internal_roster).to eq Slanger::Presence::RedisRosterFetcher.new(channel_id).internal_roster
+      fetcher = Slanger::Presence::RedisRosterFetcher.new(channel_id)
+      expect(roster.user_mapping   ).to eq fetcher.user_mapping
+      expect(roster.internal_roster).to eq fetcher.internal_roster
     end
 
 
-    let(:callback) { ->(*a){ EM.stop }}
+    let(:callback) { ->(*a){ @callback_was_called = true }}
 
-    let(:subscription_id_to_delete) { "S1" }
-    let(:node_to_delete_from) { "N1" }
     context "with the last subscription for this node" do
       let(:roster_data) do
         {"N1" => {"S1" => user_1},

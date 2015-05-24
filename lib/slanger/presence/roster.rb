@@ -1,6 +1,7 @@
 module Slanger
   module Presence
     class Roster
+      include Slanger::SyncRedis
       attr_reader :channel_id, :internal_roster, :user_mapping
       include RosterAddition
       include RosterRemoval

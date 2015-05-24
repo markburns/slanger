@@ -2,7 +2,7 @@ module Slanger
   module Janitor
     module Node
       extend self
-      extend SyncRedis
+      extend Slanger::SyncRedis
 
       def subscribe
         Slanger::Janitor.subscribe_to_roll_call do |msg|

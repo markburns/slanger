@@ -1,7 +1,7 @@
 module Slanger
   module Janitor
     class NodeStatus
-      include SyncRedis
+      include Slanger::SyncRedis
 
       def online_ids
         redis.smembers "slanger-online-node-ids"

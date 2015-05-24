@@ -8,8 +8,8 @@ module Slanger
       attr_reader :channel_id
 
       def user_mapping
-        users.each_with_object({}) do |u, users|
-          users[u["user_id"]] = u["user_info"]
+        users.each_with_object({}) do |u, result|
+          result[u["user_id"]] = u["user_info"]
         end
       end
 
@@ -29,11 +29,8 @@ module Slanger
       private
 
       def users
-        @users ||=
-          begin
-            users = redis.smembers "slanger-roster-#{channel_id}"
-            users.map{|m| attrs = JSON.parse(m); attrs["user_info"]||={}; attrs}
-          end
+        users = redis.smembers "slanger-roster-#{channel_id}"
+        users.map{|m| attrs = JSON.parse(m); attrs["user_info"]||={}; attrs}
       end
 
       def redis
