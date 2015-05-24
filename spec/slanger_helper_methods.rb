@@ -206,6 +206,15 @@ module SlangerHelperMethods
     wait_for_socket(4567)
   end
 
+  def em(time=0.01)
+    EM.run do
+      yield
+
+      EM.add_timer time do
+        EM.stop
+      end
+    end
+  end
 
   def private_channel websocket, message, channel="channel"
     channel = "private-#{channel}"

@@ -29,7 +29,11 @@ module Slanger
       private
 
       def users
-        @users ||= redis.smembers "slanger-roster-#{channel_id}"
+        @users ||=
+          begin
+            users = redis.smembers "slanger-roster-#{channel_id}"
+            users.map{|m| attrs = JSON.parse(m); attrs["user_info"]||={}; attrs}
+          end
       end
 
       def redis

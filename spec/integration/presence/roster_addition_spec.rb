@@ -45,15 +45,6 @@ describe Slanger::Presence::RosterAddition do
 
     let(:callback) { ->(*a){ EM.stop }}
 
-    def em(time=0.01)
-      EM.run do
-        yield
-
-        EM.add_timer time do
-          EM.stop
-        end
-      end
-    end
     context do
       before do
         em do
@@ -114,8 +105,8 @@ describe Slanger::Presence::RosterAddition do
           expect(roster.user_mapping).to eq user_mapping
         end
 
-        it "remove from the mapping change if user is present" do
-          em do
+        it "remove from the mapping if user is present" do
+          em 0.4 do
             roster.remove("N1", "S1", &callback)
           end
 
