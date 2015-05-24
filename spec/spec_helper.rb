@@ -52,24 +52,21 @@ RSpec.configure do |config|
         redis.del k
       end
 
-      Slanger::Channel.instance_eval { @all = nil}
-      Slanger::Presence::Channel.instance_eval { @all = nil}
+      def remove_ivs(object)
+        object.instance_eval do
+          instance_variables.each do |iv|
+            instance_variable_set iv, nil
+          end
+        end
 
-      Slanger::Service.instance_eval do
-        @node_id = nil
+        if object.respond_to?(:constants)
+          object.constants.each do |k|
+            remove_ivs(k)
+          end
+        end
       end
 
-      Slanger::Redis.instance_eval do
-        @regular_connection = nil
-        @publisher = nil
-        @subscriber = nil
-      end
-
-      Slanger::Service.instance_eval do
-        @websocket_server_signature = nil
-      end
-
-      #Slanger.error e.full_description
+      remove_ivs(Slanger)
 
       e.run
 
