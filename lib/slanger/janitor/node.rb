@@ -20,7 +20,7 @@ module Slanger
       end
 
       def respond
-        reply = {node_id: Slanger.node_id, pid: Process.pid, online: true}
+        reply = {node_id: Slanger.node_id, pid: Process.pid, online: true, type: "response"}
 
         redis.publish("slanger:roll_call", reply.to_json)
       end

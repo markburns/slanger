@@ -4,7 +4,7 @@ module Slanger
       include SyncRedis
 
       def online_ids
-        redis.smembers "slanger-roster-online-node-ids"
+        redis.smembers "slanger-online-node-ids"
       end
 
       def previously_online_ids
@@ -14,20 +14,20 @@ module Slanger
       def mark_as_offline!(*ids)
         ids.each do |id|
           Slanger.error "Slanger node: #{id} is down, removing from roster"
-          redis.srem "slanger-roster-online-node-ids", id
+          redis.srem "slanger-online-node-ids", id
         end
       end
 
       def mark_as_online!(*ids)
         ids.each do |id|
-          redis.sadd "slanger-roster-online-node-ids", id
+          redis.sadd "slanger-online-node-ids", id
         end
       end
 
       def update_from_acknowledgements!(acknowledgements)
         missing = determining_missing_from_acknowledgements!(acknowledgements)
 
-        mark_as_offline! *missing
+        mark_as_offline!(*missing)
         remove_invalid_presence_channels!
         missing
       end

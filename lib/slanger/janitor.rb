@@ -11,6 +11,10 @@ module Slanger
       end
     end
 
+    def acknowledgements
+      @acknowledgements
+    end
+
     def request!
       @waiting_for_responses = true
       redis.publish("slanger:roll_call", {type: "request"}.to_json)
