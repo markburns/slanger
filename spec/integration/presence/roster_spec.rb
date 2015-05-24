@@ -6,44 +6,12 @@ require "fiber"
 describe "PresenceChannel Roster" do
 
   context "with multiple instances of channel connections to the same PresenceChannel (i.e. multiple nodes)" do
-    def start_ha_proxy
-      Slanger.debug "Starting haproxy"
-
-      fork_reactor do
-        exec "haproxy -f spec/support/haproxy.cfg"
-      end
-    end
-
     after do
-      `killall -9 haproxy`
+      stop_ha_proxy
     end
 
     before do
-      `killall -9 haproxy`
-      test_setup_1 = socket_id_block(roster_index=0, node_id="1", subscription_ids=["S1", "S3"], socket_ids = ["1.1", "1.2"])
-      test_setup_2 = socket_id_block(roster_index=1, node_id="2", subscription_ids=["S2", "S4"], socket_ids = ["2.1", "2.2"])
-
-      start_slanger(websocket_port: 8081, api_port: 4568, &test_setup_1)
-      start_slanger(websocket_port: 8082, api_port: 4569, &test_setup_2)
-
-      start_ha_proxy
-      wait_for_socket(8080)
-      wait_for_socket(4567)
-    end
-
-    def socket_id_block(roster_index, node_id, subscription_ids, socket_ids)
-      Proc.new do
-        expect(Slanger::Connection::RandomSocketId).
-          to receive(:next).
-          and_return(*socket_ids)
-
-        expect(Slanger::Channel::RandomSubscriptionId).
-          to receive(:next).
-          and_return(*subscription_ids)
-
-
-        allow(Slanger).to receive(:node_id).and_return(node_id)
-      end
+      start_slanger_nodes_and_haproxy
     end
 
     it "updates the internal rosters correctly for each node" do
@@ -88,8 +56,8 @@ describe "PresenceChannel Roster" do
                   #we can't check the roster status after EM.stop as it
                   #closes the websockets and removes the members
                   expect(Slanger::Presence::Roster.new("presence-channel").internal_roster).to eq({
-                    "1" =>{"S1" => user[:user_id]},
-                    "2" =>{"S2" => user[:user_id]}
+                    "1" =>{"S1-1" => user[:user_id]},
+                    "2" =>{"S2-1" => user[:user_id]}
                   })
 
                   Slanger.error "unbinding ws_2"
@@ -125,7 +93,7 @@ describe "PresenceChannel Roster" do
           if @closed_ws_2
             Slanger.error "periodic timer closed_ws_2"
             expect(Slanger::Presence::Roster.new("presence-channel").internal_roster).to eq({
-              "1" =>{"S1" => user[:user_id]}
+              "1" =>{"S1-1" => user[:user_id]}
             })
 
             EM.stop

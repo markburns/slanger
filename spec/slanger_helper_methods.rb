@@ -85,6 +85,7 @@ module SlangerHelperMethods
   def set_predictable_socket_and_subscription_ids!
     Slanger::Service.fetch_node_id!
     Slanger::Service.set_online_status!
+
     ids = (1..50).to_a.map{|i| "S#{Slanger.node_id}-#{i}"}
     allow(Slanger::Presence::Channel::RandomSubscriptionId).to receive(:next).
       and_return(*ids)
@@ -194,10 +195,13 @@ module SlangerHelperMethods
     `killall -9 haproxy`
   end
 
-  def start_slanger_nodes_and_haproxy
+  def start_slanger_nodes_and_haproxy(test_setup_1=nil, test_setup_2=nil)
+    test_setup_1 ||= ->{ set_predictable_socket_and_subscription_ids!  }
+    test_setup_2 ||= ->{ set_predictable_socket_and_subscription_ids!  }
+
     stop_ha_proxy
-    start_slanger(websocket_port: 8081, api_port: 4568) { set_predictable_socket_and_subscription_ids! }
-    start_slanger(websocket_port: 8082, api_port: 4569) { set_predictable_socket_and_subscription_ids! }
+    start_slanger(websocket_port: 8081, api_port: 4568, &test_setup_1)
+    start_slanger(websocket_port: 8082, api_port: 4569, &test_setup_2)
     wait_for_socket(8081)
     wait_for_socket(8082)
 
