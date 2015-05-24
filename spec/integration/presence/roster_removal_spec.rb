@@ -4,20 +4,6 @@ require 'slanger'
 describe Slanger::Presence::RosterRemoval do
   let(:roster) { Slanger::Presence::Roster.new channel_id }
   let(:channel_id) { "presence-abcd" }
-  describe "#user_node_empty?" do
-    #keys in redis
-    #
-    #
-    #slanger-presence-abcd
-    #{user_id: "U1", user_info: {name: "mark", surname: "burns"}}
-    #
-    #hash:  slanger-presence-P1-node-N1
-    #key:   S1
-    #value: U1
-    #
-
-  end
-
   def internal_roster
     internal_roster = {}
 
@@ -146,6 +132,10 @@ describe Slanger::Presence::RosterRemoval do
 
       EM.run do
         roster.remove(node_to_delete_from, subscription_id_to_delete, &callback)
+
+        EM.add_timer 2 do
+          EM.stop
+        end
       end
     end
 
@@ -196,9 +186,6 @@ describe Slanger::Presence::RosterRemoval do
         expect(redis.keys).to_not include("#{key}-node-N1")
 
         expect(redis.smembers(key)).to eq [user_2.to_json]
-      end
-
-      it "sends a notification" do
       end
     end
   end

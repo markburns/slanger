@@ -52,7 +52,9 @@ RSpec.configure do |config|
         redis.del k
       end
 
-      def remove_ivs(object)
+      def remove_klass_ivs(object)
+        return unless object.is_a?(Module)
+
         object.instance_eval do
           instance_variables.each do |iv|
             instance_variable_set iv, nil
@@ -60,13 +62,21 @@ RSpec.configure do |config|
         end
 
         if object.respond_to?(:constants)
-          object.constants.each do |k|
-            remove_ivs(k)
+          constants = object.
+            constants.
+            map{|c| object.const_get(c) rescue nil}.
+            compact.
+            select{|c| c.is_a?(Module)}
+
+          constants.each do |k|
+            unless k.ancestors.include?(Struct)
+              remove_klass_ivs(k)
+            end
           end
         end
       end
 
-      remove_ivs(Slanger)
+      remove_klass_ivs(Slanger)
 
       e.run
 

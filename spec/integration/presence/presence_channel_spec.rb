@@ -137,7 +137,7 @@ describe 'Integration' do
               end
             end
 
-            expect(client1_messages).to have_attributes connection_established: true, count: 5
+            expect(client1_messages).to have_attributes connection_established: true
             # Channel id should be in the payload
             #data = {presence: {"count"=>2, "ids"=>["0f177369a3b71275d25ab1b44db9f95f", "37960509766262569d504f02a0ee986d"], "hash"=>{"0f177369a3b71275d25ab1b44db9f95f"=>{"name"=>"SG"}, "37960509766262569d504f02a0ee986d"=>{"name"=>"CHROME"}}}}
             data = {presence: {"count"=>1, "ids"=>["0f177369a3b71275d25ab1b44db9f95f"], "hash"=>{"0f177369a3b71275d25ab1b44db9f95f"=>{"name"=>"SG"}}}}
