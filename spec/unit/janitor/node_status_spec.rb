@@ -6,19 +6,19 @@ describe Slanger::Janitor::NodeStatus do
 
   it "#online_ids" do
     expect(node_status.online_ids).to eq []
-    redis.sadd "slanger-roster-online-node-ids", 1
+    redis.sadd "slanger-online-node-ids", 1
     expect(node_status.online_ids).to eq ["1"]
   end
 
   it "#mark_as_offline!" do
-    redis.sadd "slanger-roster-online-node-ids", 1
-    redis.sadd "slanger-roster-online-node-ids", 2
+    redis.sadd "slanger-online-node-ids", 1
+    redis.sadd "slanger-online-node-ids", 2
     node_status.mark_as_offline! 2
     expect(node_status.online_ids).to eq ["1"]
   end
 
   it "#mark_as_online!" do
-    redis.sadd "slanger-roster-online-node-ids", 1
+    redis.sadd "slanger-online-node-ids", 1
     node_status.mark_as_online! 3
     expect(node_status.online_ids).to eq ["1", "3"]
   end
@@ -26,8 +26,8 @@ describe Slanger::Janitor::NodeStatus do
   context "with acknowledgements" do
     let(:acknowledgements) { [ {"online" => true, "type" => "response", "node_id" => 1}] }
     before do
-      redis.sadd "slanger-roster-online-node-ids", 1
-      redis.sadd "slanger-roster-online-node-ids", 2
+      redis.sadd "slanger-online-node-ids", 1
+      redis.sadd "slanger-online-node-ids", 2
       redis.sadd "slanger-roster-presence-channel-node-1",  {user_id: 123}.to_json
       redis.sadd "slanger-roster-presence-channel-node-2",  {user_id: 123}.to_json
     end
@@ -41,8 +41,8 @@ describe Slanger::Janitor::NodeStatus do
     it "#update_from_acknowledgements!" do
       node_status.update_from_acknowledgements!(acknowledgements)
 
-      expect(redis.smembers "slanger-roster-online-node-ids").not_to include "2"
-      expect(redis.smembers "slanger-roster-online-node-ids").not_to include 2
+      expect(redis.smembers "slanger-online-node-ids").not_to include "2"
+      expect(redis.smembers "slanger-online-node-ids").not_to include 2
       expect(redis.keys).    to include "slanger-roster-presence-channel-node-1"
       expect(redis.keys).not_to include "slanger-roster-presence-channel-node-2"
     end
@@ -51,8 +51,8 @@ describe Slanger::Janitor::NodeStatus do
 
   context "removing presence keys" do
     before do
-      redis.sadd "slanger-roster-online-node-ids", 1
-      redis.sadd "slanger-roster-online-node-ids", 2
+      redis.sadd "slanger-online-node-ids", 1
+      redis.sadd "slanger-online-node-ids", 2
       redis.sadd "slanger-roster-presence-channel-node-1",  {user_id: 123}.to_json
       redis.sadd "slanger-roster-presence-channel-node-2",  {user_id: 123}.to_json
       redis.sadd "slanger-roster-presence-channel-node-56", {user_id: 123}.to_json

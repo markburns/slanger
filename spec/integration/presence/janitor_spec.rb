@@ -80,7 +80,8 @@ describe "Janitor" do
             Slanger.error "expecting 1,2"
             expect(Slanger::Service.present_node_ids).to contain_exactly "1", "2"
           else
-              Slanger.error "expecting 1,3"
+            Slanger.error "expecting 1,3"
+
             EM.add_timer 4 do
               Slanger.error "expecting 1,3"
               #we can't guarantee the order of the pids in our server_pids variable
