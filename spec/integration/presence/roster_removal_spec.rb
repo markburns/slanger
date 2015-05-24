@@ -20,7 +20,7 @@ describe Slanger::Presence::RosterRemoval do
 
   def set_internal(internal, user_mapping={})
     redis_roster = double "redis roster"
-    expect(Slanger::RedisRoster).to receive(:new).and_return(redis_roster)
+    expect(Slanger::Presence::RedisRosterFetcher).to receive(:new).and_return(redis_roster)
     expect(redis_roster).to receive(:internal_roster).and_return(internal)
     expect(redis_roster).to receive(:user_mapping).and_return(user_mapping)
   end
@@ -141,7 +141,7 @@ describe Slanger::Presence::RosterRemoval do
 
     after do
       #sanity check
-      expect(roster.internal_roster).to eq Slanger::RedisRoster.new(channel_id).internal_roster
+      expect(roster.internal_roster).to eq Slanger::Presence::RedisRosterFetcher.new(channel_id).internal_roster
     end
 
 

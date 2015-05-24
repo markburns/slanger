@@ -8,7 +8,7 @@ describe 'Slanger::Roster' do
 
   before do
     redis_roster = double "redis roster"
-    allow(Slanger::RedisRoster).to receive(:new).and_return(redis_roster)
+    allow(Slanger::Presence::RedisRosterFetcher).to receive(:new).and_return(redis_roster)
     allow(redis_roster).to receive(:internal_roster).and_return(internal_roster)
     allow(redis_roster).to receive(:user_mapping).and_return(user_mapping)
     allow(Slanger).to receive(:node_id).and_return "N1"

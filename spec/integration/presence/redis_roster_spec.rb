@@ -1,8 +1,8 @@
 require 'spec_helper'
 
-describe Slanger::RedisRoster do
+describe Slanger::Presence::RedisRosterFetcher do
   describe "#fetch"do
-    let(:redis_roster) { Slanger::RedisRoster.new channel_id }
+    let(:redis_roster) { Slanger::Presence::RedisRosterFetcher.new channel_id }
     let(:channel_id) { "presence-abcd" }
     let(:user_1) { {"user_id" => "U1", "user_info" => {}} }
     let(:user_2) { {"user_id" => "U2", "user_info" => {"something" =>"here"}} }

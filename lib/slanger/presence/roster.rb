@@ -7,7 +7,7 @@ module Slanger
 
       def initialize(channel_id)
         @channel_id = channel_id
-        redis_roster = Slanger::RedisRoster.new(channel_id)
+        redis_roster = RedisRosterFetcher.new(channel_id)
         @internal_roster = redis_roster.internal_roster
         @user_mapping    = redis_roster.user_mapping
       end
