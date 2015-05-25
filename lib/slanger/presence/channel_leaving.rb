@@ -8,7 +8,7 @@ module Slanger
           em_channel.unsubscribe(public_to_em_channel_table.delete(public_subscription_id))
 
           if removed
-            # Don't tell the channel subscriptions the member has been removed if the subscriber data
+            # Don't tell the channel subscriptions the user has been removed if the subscriber data
             # still remains in the roster hash, e.g. multiple browser windows open.
             Slanger.debug "Roster removal complete for public_subscription_id: #{public_subscription_id}"
 

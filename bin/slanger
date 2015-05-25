@@ -97,8 +97,6 @@ OptionParser.new do |opts|
   end
 end
 
-
-
 if options[:tls_options]
   [:cert_chain_file, :private_key_file].each do |param|
     raise RuntimeError.new "--#{param} does not exist at `#{options[:tls_options][param]}`" unless File.exists? options[:tls_options][param]
@@ -106,33 +104,11 @@ if options[:tls_options]
   end
 end
 
-STDOUT.sync = true
-
 EM.epoll
 EM.kqueue
 
-
 EM.run do
   File.tap { |f| require f.expand_path(f.join(f.dirname(__FILE__),'..', 'slanger.rb')) }
-  #force autoload
-  Slanger::Logger
-
-  log_file  = options[:log_file]  || STDOUT
-  log_level = options[:log_level] || Logger::INFO
-
-  Slanger.logger = Logger.new log_file
-  Slanger.log_level = log_level
-
-  Slanger::Config.load options
-
-  %w(INT HUP).each do |s|
-    Signal.trap(s) { 
-      Slanger.info "Trapped signal #{s}"
-      Slanger.info "Stopping slanger"
-      Slanger::Service.stop 
-    }
-  end
-
   Slanger::Service.run
 
   Slanger.info <<-LOGO

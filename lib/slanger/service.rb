@@ -1,5 +1,6 @@
 require 'thin'
 require 'rack'
+require "logger"
 
 #autoload logger
 Slanger::Logger
@@ -13,19 +14,42 @@ module Slanger
     class << self
       attr_reader :websocket_server_signature
 
-      def run
-        Slanger.debug "Slanger::Service.run"
-        Slanger::Config.load
+      def run(options={})
+        setup_logger!(options)
+        Slanger.debug "Slanger::Service.run logging setup"
+
+        Slanger::Config.load options
         Slanger::Config[:require].each { |f| require f }
 
         create_pid!
         fetch_node_id!
-        start_api_server!
-        start_websocket_server!
+        start_api_server!(options)
+        start_websocket_server!(options)
         set_online_status!
+        trap_signals!
       rescue
         stop
         remove_pid!
+      end
+
+      def setup_logger!(options)
+        log_file  = options[:log_file]  || STDOUT
+        log_file.sync = true
+        log_level = options[:log_level] || ::Logger::INFO
+
+        Slanger.logger = ::Logger.new log_file
+        Slanger.log_level = log_level
+      end
+
+
+      def trap_signals!
+        %w(INT HUP).each do |s|
+          Signal.trap(s) {
+            Slanger.info "Trapped signal #{s}"
+            Slanger.info "Stopping slanger"
+            Slanger::Service.stop
+          }
+        end
       end
 
       def node_id
@@ -41,6 +65,7 @@ module Slanger
       end
 
       def set_online_status!
+        Slanger.debug "Setting node as online #{node_id}"
         Slanger::Redis.sync_redis_connection.sadd("slanger-online-node-ids", node_id)
       end
 
@@ -48,11 +73,11 @@ module Slanger
         Slanger::Redis.sync_redis_connection.hincrby("slanger-node", "next-id", 1)
       end
 
-      def start_websocket_server!
-        options = map_options_for_websocket_server(Slanger::Config)
+      def start_websocket_server!(options=Slanger::Config.options)
+        ws_options = map_options_for_websocket_server(options)
 
-        Slanger.info "OPTIONS #{options}"
-        @websocket_server_signature = Slanger::WebSocketServer.run(options)
+        Slanger.info "WSS options: #{ws_options}"
+        @websocket_server_signature = Slanger::WebSocketServer.run(ws_options)
 
         Slanger.debug "websocket_server_signature: #{@websocket_server_signature}"
       end
@@ -73,9 +98,9 @@ module Slanger
         opt
       end
 
-      def start_api_server!
+      def start_api_server!(options=Slanger::Config.options)
+        connection_args = map_options_for_api_server options 
         Thin::Logging.silent = true
-        connection_args = map_options_for_api_server Slanger::Config
 
         Slanger.info "Starting API server #{connection_args}"
         Rack::Handler::Thin.run Slanger::Api::Server, connection_args
@@ -88,12 +113,14 @@ module Slanger
 
       def stop
         Slanger.info "Stopping websocket server"
-        raise if websocket_server_signature.nil?
+        if websocket_server_signature
+          Slanger::WebSocketServer.stop(websocket_server_signature)
+        end
 
-        Slanger::WebSocketServer.stop(websocket_server_signature)
-
-        Slanger.info "Stopping API server"
-        EM.stop if EM.reactor_running?
+        if EM.reactor_running?
+          Slanger.info "Stopping API server"
+          EM.stop
+        end
       ensure
         remove_pid!
       end

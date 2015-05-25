@@ -6,6 +6,6 @@ module Slanger
       @redis ||= Slanger::Redis.sync_redis_connection
     end
 
-    delegate :srem, :sadd, :smembers, :hgetall, :hset, :hdel, to: :redis
+    delegate :keys, :srem, :sadd, :smembers, :hgetall, :hset, :hdel, to: :redis
   end
 end

@@ -30,8 +30,8 @@ module Slanger
         subscription_id = message["subscription_id"]
 
         if message["online"]
-          member = message['channel_data']
-          roster.add_internal(node_id, subscription_id, member)
+          user = message['channel_data']
+          roster.add(node_id, subscription_id, user, persist_to_redis= false)
         else
           roster.remove_internal RosterParams.new(channel_id, node_id, subscription_id)
         end

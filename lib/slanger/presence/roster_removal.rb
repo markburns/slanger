@@ -6,19 +6,18 @@ module Slanger
         Slanger.debug "removing from redis #{params.full}"
 
         user_id = remove_internal(params)
+        user = from_user_id(params, user_id)
+
         hdel(params.node_key, params.subscription_id)
 
-        Slanger.debug "internal_roster: #{@internal_roster}"
-
         if user_in_roster?(user_id)
-          blk.call
+          blk.call false, user
         else
-          user_info = @user_mapping.delete(user_id) || {}
-          member = member_from_user_id(params, user_id)
+          @user_mapping.delete(user_id)
 
-          srem(params.channel_key, member.to_json)
+          srem(params.channel_key, user.to_json)
 
-          blk.call true, member
+          blk.call true, user
         end
 
         Slanger.debug "Roster#remove successful channel_id: #{channel_id} user_node_key: #{params.full} internal_roster: #{@internal_roster}"
@@ -45,10 +44,9 @@ module Slanger
 
       private
 
-      def member_from_user_id(params, user_id)
-        redis = Slanger::Redis.sync_redis_connection
-        members = redis.smembers params.channel_key
-        members.map{|a| JSON.parse(a)}.find{|u| user_id==u["user_id"]}
+      def from_user_id(params, user_id)
+        users = smembers params.channel_key
+        users.map{|a| JSON.parse(a)}.find{|u| user_id==u["user_id"]}
       end
     end
   end

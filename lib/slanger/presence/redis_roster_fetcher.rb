@@ -21,7 +21,7 @@ module Slanger
 
           subscriptions.each do |subscription_id, user_id|
             roster[node_id] ||= {}
-            roster[node_id][subscription_id] =  user_id 
+            roster[node_id][subscription_id] =  user_id
           end
         end
       end

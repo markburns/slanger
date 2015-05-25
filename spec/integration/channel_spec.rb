@@ -1,8 +1,9 @@
 require 'spec_helper'
 
 describe 'Integration:' do
-
-  before(:each) { start_slanger }
+  before do
+    start_slanger log_file: STDOUT, log_level: "DEBUG"
+  end
 
   describe 'channel' do
     it 'pushes messages to interested websocket connections' do
@@ -11,6 +12,7 @@ describe 'Integration:' do
         when 1
           websocket.callback { websocket.send({ event: 'pusher:subscribe', data: { channel: 'MY_CHANNEL'} }.to_json) }
         when 2
+          byebug
           Pusher['MY_CHANNEL'].trigger 'an_event', some: "Mit Raben Und Wölfen"
         when 3
           EM.next_tick { EM.stop }
@@ -28,8 +30,8 @@ describe 'Integration:' do
           websocket.callback { websocket.send({ event: 'pusher:subscribe', data: { channel: 'MY_CHANNEL'} }.to_json) }
         when 2
           socket_id = JSON.parse(messages.first["data"])["socket_id"]
-          Pusher['MY_CHANNEL'].trigger 'not_excluded_socket_event', { some: "Mit Raben Und Wölfen" }
-          Pusher['MY_CHANNEL'].trigger 'excluded_socket_event', { some: "Mit Raben Und Wölfen" }, socket_id
+          Pusher.trigger "MY_CHANNEL", 'not_excluded_socket_event', { some: "Mit Raben Und Wölfen" }
+          Pusher.trigger "MY_CHANNEL", 'excluded_socket_event', { some: "Mit Raben Und Wölfen" }, socket_id: socket_id
         when 3
           EM.stop
         end
@@ -96,7 +98,7 @@ describe 'Integration:' do
               client2.callback { client2.send({ event: 'pusher:subscribe', data: { channel: 'MY_CHANNEL'} }.to_json) }
             when 2
               socket_id = JSON.parse(client1_messages.first['data'])['socket_id']
-              Pusher['MY_CHANNEL'].trigger 'an_event', { some: 'data' }, socket_id
+              Pusher.trigger "MY_CHANNEL", 'an_event', { some: 'data' }, socket_id: socket_id
             when 3
               EM.stop
             end

@@ -1,15 +1,9 @@
 module SlangerHelperMethods
   def start_slanger options={}, &blk
-    # Fork service. Our integration tests MUST block the main thread because we
-    # want to wait for i/o to finish.
-    fork_reactor do |channel|
+    fork_reactor do
       options = default_slanger_options.merge(options)
-      Slanger::Config.load options
+      Slanger::Service.run options
 
-      start_websocket_server! options
-      start_api_server! options
-      Slanger::Service.fetch_node_id!
-      Slanger::Service.set_online_status!
       blk.call if blk
     end
 
@@ -17,6 +11,8 @@ module SlangerHelperMethods
     wait_for_slanger options
   end
 
+  # Fork service. Our integration tests MUST block the main thread because we
+  # want to wait for i/o to finish.
   def fork_reactor
     server_pids <<  EM.fork_reactor do
       yield
@@ -25,6 +21,30 @@ module SlangerHelperMethods
 
   def server_pids
     @server_pids ||= []
+  end
+
+  def wait_for_slanger opts = {}
+    opts = default_slanger_options.merge opts
+    wait_for_socket(opts[:api_port])
+    wait_for_socket(opts[:websocket_port])
+  end
+
+  def wait_for_socket(port)
+    retry_count = 100
+    Slanger.debug "SPEC Waiting for response on port: #{port}..."
+    begin
+      TCPSocket.new('0.0.0.0', port).close
+      Slanger.debug "SPEC            Connected to port: #{port}"
+    rescue
+      retry_count -= 1
+      sleep 0.015
+
+      if retry_count > 0
+        retry
+      else
+        fail "Slanger start failed connecting to port: #{port}"
+      end
+    end
   end
 
   def default_slanger_options
@@ -39,47 +59,12 @@ module SlangerHelperMethods
     }
   end
 
-  def start_websocket_server!(options)
-    ws_options = Slanger::Service.map_options_for_websocket_server options
-    Slanger::WebSocketServer.run(ws_options)
-  end
-
-  def start_api_server!(options)
-    Thin::Logging.silent = true
-    api_server_options = Slanger::Service.map_options_for_api_server options
-    Rack::Handler::Thin.run Slanger::Api::Server, api_server_options
-  end
-
   def stop_slanger(pids=server_pids)
     pids.each do |pid|
       # Ensure Slanger is properly stopped. No orphaned processes allowed!
       Process.kill 'SIGKILL', pid rescue nil
       Process.wait pid rescue nil
     end
-  end
-
-  def wait_for_slanger opts = {}
-    opts = default_slanger_options.merge opts
-    wait_for_socket(opts[:api_port])
-    wait_for_socket(opts[:websocket_port])
-  end
-
-  def wait_for_socket(port)
-    retry_count = 100
-    puts "Waiting for response on port #{port}..."
-    begin
-      TCPSocket.new('0.0.0.0', port).close
-    rescue
-      retry_count -= 1
-      sleep 0.015
-
-      if retry_count > 0
-        retry
-      else
-        fail "Slanger start failed connecting to port: #{port}"
-      end
-    end
-
   end
 
   def set_predictable_socket_and_subscription_ids!
