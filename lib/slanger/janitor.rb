@@ -29,7 +29,7 @@ module Slanger
 
       @node_status = Slanger::Janitor::NodeStatus.new
 
-      Slanger.info "Online nodes: #{@node_status.previously_online_ids}"
+      Slanger.info "Initially online nodes: #{@node_status.previously_online_ids}"
 
 
       subscribe_to_roll_call do |msg|
@@ -42,7 +42,7 @@ module Slanger
       yield if block_given?
 
       #give time after the initial rollcall request has been sent
-      EM.add_timer interval + 1 do
+      EM.add_timer interval + 2 do
         setup_response_monitoring(interval)
       end
 
@@ -61,7 +61,7 @@ module Slanger
       Slanger.debug "Determining online node ids from responses: #{@acknowledgements}"
       Slanger.debug "Previously online: #{@node_status.previously_online_ids}"
 
-      missing_ids =@node_status.update_from_acknowledgements!(@acknowledgements)
+      missing_ids = @node_status.update_from_acknowledgements!(@acknowledgements)
       @acknowledgements.clear
 
       if missing_ids.none?
@@ -82,6 +82,7 @@ module Slanger
         yield JSON.parse msg
       end
     end
+
     private
 
     def pubsub

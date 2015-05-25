@@ -27,14 +27,15 @@ module Slanger
         start_websocket_server!(options)
         set_online_status!
         trap_signals!
-      rescue
+      rescue Exception => e
+        Slanger.error e
+        Slanger.error e.backtrace.join "\n"
         stop
         remove_pid!
       end
 
       def setup_logger!(options)
-        log_file  = options[:log_file]  || STDOUT
-        log_file.sync = true
+        log_file  = options[:log_file]  || STDOUT.tap{|s| s.sync=true}
         log_level = options[:log_level] || ::Logger::INFO
 
         Slanger.logger = ::Logger.new log_file

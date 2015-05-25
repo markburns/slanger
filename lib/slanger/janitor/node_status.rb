@@ -25,10 +25,12 @@ module Slanger
       end
 
       def update_from_acknowledgements!(acknowledgements)
-        missing = determining_missing_from_acknowledgements!(acknowledgements)
+        missing, online = determining_missing_from_acknowledgements!(acknowledgements)
 
+        mark_as_online!(*online)
         mark_as_offline!(*missing)
         remove_invalid_presence_channels!
+        remove_invalid_users!
         missing
       end
 
@@ -39,7 +41,40 @@ module Slanger
 
         missing_ids, @previously_online_ids = (previously_online_ids - online_ids), online_ids
 
-        missing_ids
+        [missing_ids, online_ids]
+      end
+
+      def remove_invalid_users!
+        valid_ids = online_ids
+        shown_as_present = {}
+        actually_present_ids = {}
+
+
+        redis.keys("slanger-roster-presence-*").each do |k|
+          if k !~ /-node-\d+\z/
+            shown_as_present[k] = redis.smembers k
+          else
+            channel_key = k.gsub /-node-\d+\Z/, ""
+            actually_present_ids[channel_key] ||= []
+            actually_present_ids[channel_key] += redis.smembers(k)
+          end
+        end
+
+        actually_present_users = {}
+
+        actually_present_ids.each do |key, ids|
+          users = shown_as_present[key].select do |u| 
+            ids.uniq.map(&:to_s).include?(JSON.parse(u)["user_id"].to_s)
+          end
+
+          actually_present_users[key]=users if users.any?
+        end
+
+        actually_present_users.each do |key, users|
+          redis.del key
+          redis.sadd key, users
+        end
+
       end
 
       def remove_invalid_presence_channels!

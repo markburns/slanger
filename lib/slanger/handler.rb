@@ -33,8 +33,6 @@ module Slanger
       if event =~ /\Aclient-/
         msg['socket_id'] = connection.socket_id
         Channel.send_client_message msg
-      elsif msg["data"]["channel"]=="slanger:roll_call"
-        Slanger::Janitor::RollCall.handle(msg)
       elsif respond_to? event, true
         send event, msg
       end

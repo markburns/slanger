@@ -48,20 +48,49 @@ describe Slanger::Janitor::NodeStatus do
     end
   end
 
+  context "removing invalid users" do
+    let(:user_1) { {user_id: 123}.to_json }
+    let(:user_2) { {user_id: 456}.to_json }
+
+    before do
+      redis.sadd "slanger-online-node-ids", 1
+      redis.sadd "slanger-online-node-ids", 2
+      redis.sadd "slanger-roster-presence-abcd",  user_1
+      redis.sadd "slanger-roster-presence-abcd",  user_2
+      redis.sadd "slanger-roster-presence-abcd-node-1",  123
+      redis.sadd "slanger-roster-presence-abcd-node-2",  123
+
+      redis.sadd "slanger-roster-presence-defg",  user_1
+      redis.sadd "slanger-roster-presence-defg",  user_2
+      redis.sadd "slanger-roster-presence-defg-node-1",  123
+      redis.sadd "slanger-roster-presence-defg-node-2",  123
+      redis.sadd "slanger-roster-presence-defg-node-2",  456
+    end
+
+    it do
+      expect(redis.smembers "slanger-roster-presence-abcd").to eq [user_1, user_2]
+      expect(redis.smembers "slanger-roster-presence-defg").to eq [user_1, user_2]
+      node_status.remove_invalid_users!
+
+      expect(redis.smembers "slanger-roster-presence-abcd").to eq [user_1]
+      expect(redis.smembers "slanger-roster-presence-defg").to eq [user_1, user_2]
+    end
+  end
 
   context "removing presence keys" do
     before do
       redis.sadd "slanger-online-node-ids", 1
       redis.sadd "slanger-online-node-ids", 2
-      redis.sadd "slanger-roster-presence-channel-node-1",  {user_id: 123}.to_json
-      redis.sadd "slanger-roster-presence-channel-node-2",  {user_id: 123}.to_json
-      redis.sadd "slanger-roster-presence-channel-node-56", {user_id: 123}.to_json
+      redis.sadd "slanger-roster-presence-channel-node-1",  123
+      redis.sadd "slanger-roster-presence-channel-node-2",  123
+      redis.sadd "slanger-roster-presence-channel-node-56", 123
     end
 
     it "#valid_presence_channel_key?!" do
       expect(node_status.valid_presence_channel_key?("slanger-roster-presence-channel-node-56")).to be_falsey
       expect(node_status.valid_presence_channel_key?("slanger-roster-presence-channel-node-1")).to be_truthy
     end
+
     it "#remove_invalid_presence_channels!" do
       node_status.remove_invalid_presence_channels!
 

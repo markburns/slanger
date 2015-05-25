@@ -1,23 +1,31 @@
 module Slanger
   module Presence
     module RosterRemoval
-      def remove(node_id, subscription_id, &blk)
+      def remove(node_id, subscription_id, update_redis=true, &blk)
         params = RosterParams.new(channel_id, node_id, subscription_id)
-        Slanger.debug "removing from redis #{params.full}"
 
-        user_id = remove_internal(params)
+        user_id = internal_roster[node_id].delete(subscription_id) rescue nil
+
+        if internal_roster[params.node_id].blank?
+          internal_roster.delete params.node_id 
+        end
+
         user = from_user_id(params, user_id)
 
-        hdel(params.node_key, params.subscription_id)
+        if update_redis
+          hdel(params.node_key, params.subscription_id)
+        end
 
         if user_in_roster?(user_id)
-          blk.call false, user
+          blk.call false, user if blk
         else
           @user_mapping.delete(user_id)
 
-          srem(params.channel_key, user.to_json)
+          if update_redis
+            srem(params.channel_key, user.to_json)
+          end
 
-          blk.call true, user
+          blk.call true, user if blk
         end
 
         Slanger.debug "Roster#remove successful channel_id: #{channel_id} user_node_key: #{params.full} internal_roster: #{@internal_roster}"
@@ -25,21 +33,6 @@ module Slanger
 
       def user_in_roster?(user)
         internal_roster.values.any?{|n| n.values.include?(user)}
-      end
-
-      def remove_internal(params)
-        user_id = internal_roster[params.node_id].delete(params.subscription_id)
-      rescue NoMethodError
-        user_id = user_id #ensure we can return a value
-      ensure
-        remove_blank_nodes!(params, internal_roster)
-        return user_id
-      end
-
-      def remove_blank_nodes!(params, roster)
-        if roster[params.node_id].blank?
-          roster.delete params.node_id
-        end
       end
 
       private

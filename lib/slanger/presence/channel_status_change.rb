@@ -31,9 +31,9 @@ module Slanger
 
         if message["online"]
           user = message['channel_data']
-          roster.add(node_id, subscription_id, user, persist_to_redis= false)
+          roster.add(node_id, subscription_id, user, update_redis= false)
         else
-          roster.remove_internal RosterParams.new(channel_id, node_id, subscription_id)
+          roster.remove(node_id, subscription_id, update_redis=false)
         end
       end
     end
