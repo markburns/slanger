@@ -33,9 +33,10 @@ describe Slanger::Janitor::NodeStatus do
     end
 
     it "#determining_missing_from_acknowledgements!" do
-      result = node_status.determining_missing_from_acknowledgements!(acknowledgements)
+      missing, online = node_status.determine_missing_from_acknowledgements!(acknowledgements)
 
-      expect(result).to eq ["2"]
+      expect(missing).to eq ["2"]
+      expect(online).to eq ["1"]
     end
 
     it "#update_from_acknowledgements!" do

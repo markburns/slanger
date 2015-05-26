@@ -25,7 +25,7 @@ module Slanger
       end
 
       def update_from_acknowledgements!(acknowledgements)
-        missing, online = determining_missing_from_acknowledgements!(acknowledgements)
+        missing, online = determine_missing_from_acknowledgements!(acknowledgements)
 
         mark_as_online!(*online)
         mark_as_offline!(*missing)
@@ -34,7 +34,7 @@ module Slanger
         missing
       end
 
-      def determining_missing_from_acknowledgements!(acknowledgements)
+      def determine_missing_from_acknowledgements!(acknowledgements)
         online_ids = acknowledgements.select{|a| a["online"] }.map do |a|
           a["node_id"].to_s
         end
@@ -63,7 +63,7 @@ module Slanger
         actually_present_users = {}
 
         actually_present_ids.each do |key, ids|
-          users = shown_as_present[key].select do |u| 
+          users = Array(shown_as_present[key]).select do |u| 
             ids.uniq.map(&:to_s).include?(JSON.parse(u)["user_id"].to_s)
           end
 
