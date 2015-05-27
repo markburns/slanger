@@ -75,6 +75,13 @@ module Slanger
           redis.sadd key, users
         end
 
+        shown_as_present.each do |k, users|
+          missing = Array(users) - Array(actually_present_users[k])
+
+          missing.each do |m|
+            redis.srem k, m
+          end
+        end
       end
 
       def remove_invalid_presence_channels!

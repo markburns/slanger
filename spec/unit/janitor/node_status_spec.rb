@@ -36,7 +36,7 @@ describe Slanger::Janitor::NodeStatus do
       redis.hset "slanger-roster-presence-channel-node-2", "S1.2", 123
     end
 
-    it "#determining_missing_from_acknowledgements!" do
+    it "#determine_missing_from_acknowledgements!" do
       missing, online = node_status.determine_missing_from_acknowledgements!(acknowledgements)
 
       expect(missing).to eq ["2"]
@@ -53,29 +53,44 @@ describe Slanger::Janitor::NodeStatus do
     end
   end
 
+  let(:presence) { "slanger-roster-presence-" }
+
   context "removing invalid users" do
     before do
       redis.sadd "slanger-online-node-ids", 1
       redis.sadd "slanger-online-node-ids", 2
-      redis.sadd "slanger-roster-presence-abcd",  user_1
-      redis.sadd "slanger-roster-presence-abcd",  user_2
-      redis.hset "slanger-roster-presence-abcd-node-1",  "S1.4", 123
-      redis.hset "slanger-roster-presence-abcd-node-2",  "S1.5", 123
+      redis.sadd "#{presence}abcd",  user_1
+      redis.sadd "#{presence}abcd",  user_2
+      redis.hset "#{presence}abcd-node-1",  "S1.4", 123
+      redis.hset "#{presence}abcd-node-2",  "S1.5", 123
 
-      redis.sadd "slanger-roster-presence-defg",  user_1
-      redis.sadd "slanger-roster-presence-defg",  user_2
-      redis.hset "slanger-roster-presence-defg-node-1", "S1.1", 123
-      redis.hset "slanger-roster-presence-defg-node-2", "S1.2", 123
-      redis.hset "slanger-roster-presence-defg-node-2", "S1.3", 456
+      redis.sadd "#{presence}defg",  user_1
+      redis.sadd "#{presence}defg",  user_2
+      redis.hset "#{presence}defg-node-1", "S1.1", 123
+      redis.hset "#{presence}defg-node-2", "S1.2", 123
+      redis.hset "#{presence}defg-node-2", "S1.3", 456
+    end
+
+    context "with no individual presence channels data, but lingering user info" do
+      before do
+        redis.del "#{presence}abcd-node-1"
+        redis.del "#{presence}abcd-node-2"
+      end
+
+      it do
+        expect(redis.smembers "#{presence}abcd").to contain_exactly user_1, user_2 #sanity check
+        node_status.remove_invalid_users!
+        expect(redis.smembers "#{presence}abcd").to eq []
+      end
     end
 
     it do
-      expect(redis.smembers "slanger-roster-presence-abcd").to eq [user_1, user_2]
-      expect(redis.smembers "slanger-roster-presence-defg").to eq [user_1, user_2]
+      expect(redis.smembers "slanger-roster-presence-abcd").to contain_exactly user_1, user_2
+      expect(redis.smembers "slanger-roster-presence-defg").to contain_exactly user_1, user_2
       node_status.remove_invalid_users!
 
       expect(redis.smembers "slanger-roster-presence-abcd").to eq [user_1]
-      expect(redis.smembers "slanger-roster-presence-defg").to eq [user_1, user_2]
+      expect(redis.smembers "slanger-roster-presence-defg").to contain_exactly user_1, user_2
     end
   end
 
