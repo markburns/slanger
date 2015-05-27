@@ -12,7 +12,6 @@ describe 'Integration:' do
         when 1
           websocket.callback { websocket.send({ event: 'pusher:subscribe', data: { channel: 'MY_CHANNEL'} }.to_json) }
         when 2
-          byebug
           Pusher['MY_CHANNEL'].trigger 'an_event', some: "Mit Raben Und Wölfen"
         when 3
           EM.next_tick { EM.stop }
