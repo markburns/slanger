@@ -44,7 +44,6 @@ describe Slanger::Presence::RosterRemoval do
 
   context "with update_redis=false" do
   describe "#remove" do
-    let(:params) { Slanger::Presence::RosterParams.new channel_id, "N1", "S1" }
     let(:user_1) { {"user_id" => "U1"} }
 
     it "copes with an empty roster" do
