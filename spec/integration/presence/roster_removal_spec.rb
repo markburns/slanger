@@ -42,13 +42,14 @@ describe Slanger::Presence::RosterRemoval do
     end
   end
 
-  describe "#remove_internal" do
+  context "with update_redis=false" do
+  describe "#remove" do
     let(:params) { Slanger::Presence::RosterParams.new channel_id, "N1", "S1" }
     let(:user_1) { {"user_id" => "U1"} }
 
     it "copes with an empty roster" do
       set_internal({})
-      roster.remove_internal(params)
+      roster.remove("N1", "S1", false)
       expect(roster.internal_roster).to eq({})
     end
 
@@ -56,9 +57,10 @@ describe Slanger::Presence::RosterRemoval do
       internal = {"N1" => {"S1"=>"U1", "S2"=> "U2"}}
       set_internal(internal)
 
-      roster.remove_internal(params)
+      roster.remove("N1", "S1", false)
       expect(roster.internal_roster).to eq({"N1"=> {"S2" => "U2"}})
     end
+  end
   end
 
   let(:redis) { ::Redis.new url: Slanger::Config.redis_address }

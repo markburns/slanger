@@ -85,7 +85,7 @@ describe 'Integration' do
           it 'sends a member added message to the existing subscribers' do
             client1_messages, client2_messages  = [], []
 
-            em_thread do
+            em(0.5) do
               client1, client2 = new_websocket, new_websocket
               client2_messages, client1_messages = [], []
 
@@ -167,7 +167,7 @@ describe 'Integration' do
             end
 
             # There should only be one set of presence messages sent to the reference user for the second user.
-            added = messages.select {|m| m['event'] == 'pusher_internal:member_added'   && m['data']['user_id'] == '37960509766262569d504f02a0ee986d' }
+            added = messages.select {|m| m['event'] == 'pusher_internal:member_added' && m['data']['user_id'] == '37960509766262569d504f02a0ee986d' }
             expect(added.length).to eq 1
           end
         end

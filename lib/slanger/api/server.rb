@@ -13,8 +13,8 @@ module Slanger
   module Api
     class Server < Sinatra::Base
       use Rack::FiberPool
-      set :raise_errors, lambda { true }
-      set :show_exceptions, true
+      set :raise_errors, lambda { false }
+      set :show_exceptions, false
 
       error(Signature::AuthenticationError) { |e| halt 401, "401 UNAUTHORIZED" }
       error(Slanger::Api::InvalidRequest)   { |c| halt 400, "400 Bad Request" }

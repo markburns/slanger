@@ -15,21 +15,24 @@ module Slanger
       attr_reader :websocket_server_signature
 
       def run(options={})
-        setup_logger!(options)
-        Slanger.debug "Slanger::Service.run logging setup"
+        EM.run do
+          options = Slanger::Config.load options
+          puts options.sort
+          setup_logger!(options)
+          Slanger.debug "Slanger::Service.run logging setup"
 
-        Slanger::Config.load options
-        Slanger::Config[:require].each { |f| require f }
+          Slanger::Config[:require].each { |f| require f }
 
-        create_pid!
-        fetch_node_id!
-        start_api_server!(options)
-        start_websocket_server!(options)
-        set_online_status!
-        trap_signals!
+          create_pid!
+          fetch_node_id!
+          start_api_server!
+          start_websocket_server!
+          set_online_status!
+          trap_signals!
+        end
       rescue Exception => e
-        Slanger.error e
-        Slanger.error e.backtrace.join "\n"
+        puts e
+        puts e.backtrace.join "\n"
         stop
         remove_pid!
       end
@@ -46,11 +49,19 @@ module Slanger
       def trap_signals!
         %w(INT HUP).each do |s|
           Signal.trap(s) {
-            Slanger.info "Trapped signal #{s}"
-            Slanger.info "Stopping slanger"
+            puts "Trapped signal #{s}"
+            puts "Stopping slanger"
             Slanger::Service.stop
           }
         end
+      end
+
+      def stop
+        if EM.reactor_running?
+          EM.stop
+        end
+      ensure
+        remove_pid!
       end
 
       def node_id
@@ -101,7 +112,7 @@ module Slanger
 
       def start_api_server!(options=Slanger::Config.options)
         connection_args = map_options_for_api_server options 
-        Thin::Logging.silent = true
+        Thin::Logging.silent = false
 
         Slanger.info "Starting API server #{connection_args}"
         Rack::Handler::Thin.run Slanger::Api::Server, connection_args
@@ -112,19 +123,6 @@ module Slanger
         {Host: options[:api_host], Port: options[:api_port]}
       end
 
-      def stop
-        Slanger.info "Stopping websocket server"
-        if websocket_server_signature
-          Slanger::WebSocketServer.stop(websocket_server_signature)
-        end
-
-        if EM.reactor_running?
-          Slanger.info "Stopping API server"
-          EM.stop
-        end
-      ensure
-        remove_pid!
-      end
 
       private
 

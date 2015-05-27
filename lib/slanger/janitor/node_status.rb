@@ -56,7 +56,7 @@ module Slanger
           else
             channel_key = k.gsub /-node-\d+\Z/, ""
             actually_present_ids[channel_key] ||= []
-            actually_present_ids[channel_key] += redis.smembers(k)
+            actually_present_ids[channel_key] += redis.hvals(k)
           end
         end
 

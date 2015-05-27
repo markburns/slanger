@@ -42,6 +42,7 @@ module SlangerHelperMethods
       if retry_count > 0
         retry
       else
+        retry if ENV["DEBUGGER"]
         fail "Slanger start failed connecting to port: #{port}"
       end
     end

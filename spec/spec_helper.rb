@@ -69,9 +69,10 @@ RSpec.configure do |config|
             select{|c| c.is_a?(Module)}
 
           constants.each do |k|
-            unless k.ancestors.include?(Struct)
-              remove_klass_ivs(k)
-            end
+            #Sinatra and OpenStruct depend upon setup class level state
+            exclude = (k.ancestors.map(&:to_s) & ["Sinatra::Base", "Struct"]).any?
+
+            remove_klass_ivs(k) unless exclude
           end
         end
       end
