@@ -34,7 +34,10 @@ module Slanger
 
           channel = Slanger::Channel.from(channel_id)
           r = channel.send(:roster)
-          [r.internal_roster, r.user_mapping].to_json
+          [{node_id: Slanger.node_id, online_ids: Slanger::Service.present_node_ids, 
+            internal_roster: r.internal_roster, 
+            user_ids: r.user_mapping}
+          ].to_json
         end
       end
 
