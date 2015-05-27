@@ -104,8 +104,8 @@ describe "Janitor" do
       if first_run
         Slanger::Janitor.setup! 2
 
-        Slanger::Janitor.subscribe_to_roll_call do |msg|
-          messages << msg if msg["type"]=="response"
+        Slanger::Janitor.subscribe_to_roll_call("response") do |msg|
+          messages << msg
 
           if messages.length == expected_message_count && stop_on_message_count_reached
             EM.stop
@@ -149,7 +149,7 @@ describe "Janitor" do
 
 
         if auto_stop
-          Slanger::Janitor.subscribe_to_roll_call do |msg|
+          Slanger::Janitor.subscribe_to_roll_call("response") do |msg|
             if Slanger::Janitor.acknowledgements.length == auto_stop
               EM.stop
             end

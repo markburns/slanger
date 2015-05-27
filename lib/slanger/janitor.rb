@@ -17,7 +17,7 @@ module Slanger
 
     def request!
       @waiting_for_responses = true
-      redis.publish("slanger:roll_call", {type: "request"}.to_json)
+      redis.publish("slanger:roll_call:request", {type: "request"}.to_json)
       Slanger.debug "#{self} Sent, waiting for responses..."
     end
 
@@ -32,11 +32,9 @@ module Slanger
       Slanger.info "Initially online nodes: #{@node_status.previously_online_ids}"
 
 
-      subscribe_to_roll_call do |msg|
-        if msg["type"]=="response"
-          Slanger.debug "Response received #{msg}"
-          @acknowledgements << msg
-        end
+      subscribe_to_roll_call("response") do |msg|
+        Slanger.debug "Response received #{msg}"
+        @acknowledgements << msg
       end
 
       yield if block_given?
@@ -68,26 +66,26 @@ module Slanger
         Slanger.info "Online nodes: #{@node_status.online_ids}"
       end
 
-      message = {type: "update", message: "Slanger online node ids updated: #{Slanger::Service.present_node_ids}"}
-      em_channel.push(message)
+      message = {
+        message: "Slanger online node ids updated",
+        online_node_ids: Slanger::Service.present_node_ids
+      }.to_json
+
+      redis.publish("slanger:roll_call:update", message)
       @waiting_for_responses = false
     end
 
-    def em_channel
-      @em_channel ||= EM::Channel.new
-    end
-
-    def subscribe_to_roll_call
-      pubsub.on(:message) do |channel, msg|
+    def subscribe_to_roll_call(type)
+      pubsub(type).on(:message) do |channel, msg|
         yield JSON.parse msg
       end
     end
 
     private
 
-    def pubsub
+    def pubsub(type)
       redis.pubsub.tap do |p|
-        p.subscribe('slanger:roll_call')
+        p.subscribe("slanger:roll_call:#{type}")
       end
     end
 

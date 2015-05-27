@@ -8,9 +8,12 @@ module Slanger
 
       def initialize(channel_id)
         @channel_id = channel_id
-        redis_roster = RedisRosterFetcher.new(channel_id)
         @internal_roster = redis_roster.internal_roster
         @user_mapping    = redis_roster.user_mapping
+      end
+
+      def redis_roster
+        @redis_roster ||= RedisRosterFetcher.new(channel_id)
       end
 
       def ids
@@ -19,6 +22,17 @@ module Slanger
 
       def only_reference?(id)
         id_count_for(id)==1
+      end
+
+      def remove_invalid_nodes!(online_node_ids)
+        @internal_roster = redis_roster.internal_roster
+        @user_mapping = redis_roster.user_mapping
+
+        @internal_roster.each do |n, _|
+          unless online_node_ids.include?(n.to_s)
+            internal_roster.delete n
+          end
+        end
       end
 
       def id_count_for(id)

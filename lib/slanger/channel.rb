@@ -40,11 +40,10 @@ module Slanger
         end
       end
 
-      protected
-
       def all
         @all ||= {}
       end
+
     end
 
     def initialize(channel_id)

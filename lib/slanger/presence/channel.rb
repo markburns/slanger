@@ -16,6 +16,12 @@ module Slanger
       include ChannelLeaving
       include ChannelStatusChange
 
+      def self.remove_invalid_nodes!(online_node_ids)
+        all.values.each do |channel|
+          channel.remove_invalid_nodes!(online_node_ids)
+        end
+      end
+
       def initialize(args)
         super args
 
@@ -33,6 +39,10 @@ module Slanger
         else
           push message.to_json
         end
+      end
+
+      def remove_invalid_nodes!(online_node_ids)
+        roster.remove_invalid_nodes!(online_node_ids)
       end
 
       # This is used map public subscription ids to em channel subscription ids.
