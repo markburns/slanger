@@ -22,6 +22,7 @@ module Slanger
           # is already present in the roster hash, e.g. multiple browser windows open.
           if added && roster.only_reference?(user["user_id"])
             socket_id = msg["socket_id"]
+            byebug
             push payload('pusher_internal:member_added', user, socket_id: socket_id)
           end
         end

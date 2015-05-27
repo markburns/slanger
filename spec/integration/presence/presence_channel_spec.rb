@@ -161,7 +161,7 @@ describe 'Integration' do
                 multiple_async_connections(3) do |ws, socket_id|
                   subscribe_to_presence_channel(ws, {user_id: "37960509766262569d504f02a0ee986d", name: "CHROME"}, socket_id)
                 end
-              when 5 #(ws_1 connection, subscription), 3 (connection + subscription), 3 disconnect
+              when 6 #(ws_1 connection, subscription), 3 (connection + subscription), 3 disconnect
                 EM.stop
               end
             end

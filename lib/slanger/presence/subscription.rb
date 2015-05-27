@@ -13,13 +13,18 @@ module Slanger
         msg = @msg.dup
 
         #ensure we send back the initial notification to the websocket
-        if msg["event"] !~ /subscription_succeeded/
+        if msg["event"] != "pusher_internal:subscription_succeeded" 
           #used in connection to ensure we don't ping back the member_added to the same socket
           msg["socket_id"] = socket_id
         end
 
+
         subscription_id = channel.join(msg) do |m|
-          push_message m
+          json = JSON.parse(m)
+
+          unless (json["socket_id"] == socket_id) && (json["event"] == "pusher_internal:member_added")
+            push_message m
+          end
         end
       end
 

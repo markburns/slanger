@@ -16,18 +16,17 @@ describe "bin/slanger" do
       ENV['PATH'] = "#{root.join('bin').to_s}#{File::PATH_SEPARATOR}#{ENV['PATH']}"
     end
 
-    pending "should emit valid YAML to STDOUT" do
-      run_simple <<-COMMAND
-        bundle exec slanger --app_key  d4590800e2c6ae299652 \
-        --secret   your-pusher-secret \
-        --api_host 0.0.0.0:4568 \
-        --websocket_host 0.0.0.0:8081 \
-        --pid_file slanger-1.pid \
-        --log_level debug \
-        --log_file slanger-1.log
-      COMMAND
-
-
-    end
+    #pending "should emit valid YAML to STDOUT" do
+    #  #run_simple 
+    #  <<-COMMAND
+    #    bundle exec slanger --app_key  d4590800e2c6ae299652 \
+    #    --secret   your-pusher-secret \
+    #    --api_host 0.0.0.0:4568 \
+    #    --websocket_host 0.0.0.0:8081 \
+    #    --pid_file slanger-1.pid \
+    #    --log_level debug \
+    #    --log_file slanger-1.log
+    #  COMMAND
+    #end
   end
 end
