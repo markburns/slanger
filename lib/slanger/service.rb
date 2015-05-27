@@ -17,7 +17,6 @@ module Slanger
       def run(options={})
         EM.run do
           options = Slanger::Config.load options
-          puts options.sort
           setup_logger!(options)
           Slanger.debug "Slanger::Service.run logging setup"
 

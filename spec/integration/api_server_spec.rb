@@ -6,7 +6,6 @@ describe 'Integration:' do
   describe 'channel' do
     it "validates the socket id" do
       body = {socket_id: "123"}.to_json
-      puts default_slanger_options
 
       response = HTTParty.post uri, body: body, timeout: 6000
       expect(response.code).to eq 400
