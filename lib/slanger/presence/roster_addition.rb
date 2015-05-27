@@ -6,14 +6,11 @@ module Slanger
 
         user["user_info"] ||= {}
 
-
         user_id = user["user_id"]
-        @user_mapping[user_id]=user["user_info"]
-
+        @user_mapping[user_id] = user["user_info"]
 
         @internal_roster[node_id] ||= {}
         @internal_roster[node_id][subscription_id] = user_id
-
 
         added_to_roster = if persist_to_redis
                             hset(roster_node_key(node_id), subscription_id, user_id)

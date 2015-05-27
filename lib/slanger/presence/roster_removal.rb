@@ -33,6 +33,17 @@ module Slanger
         internal_roster.values.any?{|n| n.values.include?(user)}
       end
 
+      def remove_invalid_nodes!(online_node_ids)
+        @internal_roster = redis_roster.internal_roster
+        @user_mapping = redis_roster.user_mapping
+
+        @internal_roster.each do |n, _|
+          unless online_node_ids.include?(n.to_s)
+            internal_roster.delete n
+          end
+        end
+      end
+
       private
 
       def from_user_id(user_id)
