@@ -67,9 +67,9 @@ module Slanger
     end
 
     def join(*a, &blk)
-      change_subscriber_count "subscribe", +1, *a, &blk
+      id = change_subscriber_count "subscribe", +1, *a, &blk
 
-      RandomSubscriptionId.next
+      [id, RandomSubscriptionId.next]
     end
 
     class RandomSubscriptionId
@@ -85,11 +85,14 @@ module Slanger
     def change_subscriber_count(type, delta, *a, &blk)
       hincrby = Slanger::Redis.hincrby('channel_subscriber_count', channel_id, delta)
 
+      id = nil
       hincrby.callback do |value|
-        em_channel.send(type, *a, &blk)
-
         trigger_webhook type, value
+
+        id = em_channel.send(type, *a, &blk)
       end
+
+      id
     end
 
     WEBHOOK_ATTRIBUTES = {subscribe:   ["channel_occupied",1],

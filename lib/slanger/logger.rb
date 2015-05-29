@@ -20,19 +20,31 @@ module Slanger
     end
 
     %w(info debug warn error).each do |m|
-      define_method(m) do |msg|
-        if ENV["LOG_STACK"]
+      method_body = ""
+
+      if ENV["LOG_PUTS"]
+        method_body << <<-CODE
+        return puts msg 
+        CODE
+      end
+
+      if ENV["LOG_STACK"]
+        method_body << <<-CODE
           if msg =~ /\ASPEC/i
             msg = "\n#{msg}"
           else
             stack = get_lines_from caller[0..4]
             msg = "\n#{stack}\n#{msg}\n"
           end
-        end
+        CODE
+      end
 
+      method_body << <<-CODE
         klass = nil
+      CODE
 
-        if ENV["LOG_CALLER"]
+      if ENV["LOG_CALLER"]
+        method_body << <<-CODE
           klass = binding.of_caller(1).eval('self.class')
           meth  = binding.of_caller(1).eval('__method__')
           if klass.name =~/RSpec/
@@ -40,16 +52,29 @@ module Slanger
           else
             msg = " #{klass}##{meth}#{msg}\n\n"
           end
-        end
+        CODE
+      end
 
-        if ENV["LOG_NODE_ID"] && klass.to_s !~ /RSpec/
+      if ENV["LOG_NODE_ID"]
+        method_body << <<-CODE
+        if klass.to_s !~ /RSpec/
           msg = "node-#{Slanger::Service.node_id} #{msg}\n\n"
         end
-
-        return puts msg if ENV["LOG_PUTS"]
-
-        logger.send(m, msg)
+        CODE
       end
+
+
+      method_body << <<-CODE
+        logger.send(:#{m}, msg)
+      CODE
+
+      method_body = <<-METHOD
+        def #{m}(msg)
+          #{method_body}
+        end
+      METHOD
+
+      eval method_body
     end
 
     def get_lines_from(array)

@@ -5,7 +5,8 @@ module Slanger
         Slanger.debug "Joining channel #{msg}"
         user = JSON.parse msg['data']['channel_data']
 
-        public_subscription_id = super(msg)
+        em_channel_id, public_subscription_id = super(msg, &blk)
+        public_to_em_channel_table[public_subscription_id] = em_channel_id
 
         # Associate the subscription data to the public id in Redis.
         roster.add(Slanger::Service.node_id, public_subscription_id, user) do |added|
@@ -36,10 +37,6 @@ module Slanger
             Slanger.debug "Redis online slanger:connection_notification complete, public_subscription_id: #{public_subscription_id}"
 
             push payload('pusher_internal:subscription_succeeded', summary_info.to_json)
-
-            id = em_channel.subscribe &blk
-            Slanger.debug "PresenceChannel joined em_channel: #{id} public_subscription_id: #{public_subscription_id}"
-            public_to_em_channel_table[public_subscription_id] = id
           end
         end
       end

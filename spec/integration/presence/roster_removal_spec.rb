@@ -28,17 +28,17 @@ describe Slanger::Presence::RosterRemoval do
   describe "#user_in_roster?" do
     it "with an empty hash of users" do
       set_internal({})
-      expect(roster.user_in_roster?(:U1)).to be false
+      expect(roster.user_id_in_roster?(:U1)).to be false
     end
 
     it "with other present users" do
       set_internal({"N1" => {"S1" => :U2}})
-      expect(roster.user_in_roster?(:U1)).to be false
+      expect(roster.user_id_in_roster?(:U1)).to be false
     end
 
     it "with nodes and subscriptions" do
       set_internal({"N1" => {"S1" => :U1}})
-      expect(roster.user_in_roster?(:U1)).to be true
+      expect(roster.user_id_in_roster?(:U1)).to be true
     end
   end
 

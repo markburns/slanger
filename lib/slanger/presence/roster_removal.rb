@@ -8,13 +8,13 @@ module Slanger
           internal_roster.delete node_id 
         end
 
-        user = from_user_id(user_id)
-
         if update_redis
           hdel(roster_node_key(node_id), subscription_id)
         end
 
-        if user_in_roster?(user_id)
+        user = from_user_id(user_id)
+
+        if user_id_in_roster?(user_id)
           blk.call false, user if blk
         else
           @user_mapping.delete(user_id)
@@ -29,8 +29,8 @@ module Slanger
         Slanger.debug "Roster#remove successful channel_id: #{channel_id} #{subscription_id} internal_roster: #{@internal_roster}"
       end
 
-      def user_in_roster?(user)
-        internal_roster.values.any?{|n| n.values.include?(user)}
+      def user_id_in_roster?(user_id)
+        internal_roster.values.any?{|n| n.values.include?(user_id)}
       end
 
       def remove_invalid_nodes!(online_node_ids)
